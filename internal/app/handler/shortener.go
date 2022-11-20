@@ -3,12 +3,12 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
