@@ -42,3 +42,14 @@ func TestInMemory_GetURL(t *testing.T) {
 func TestNewInMemory(t *testing.T) {
 	assert.Equal(t, InMemory{make(ShortURLDataStorage)}, *NewInMemory())
 }
+
+func TestInMemory_Reset(t *testing.T) {
+	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
+
+	m := NewInMemory()
+	err := m.AddURL(*shortURLOne)
+	require.NoError(t, err)
+
+	m.Reset()
+	assert.Equal(t, 0, len(m.store))
+}
