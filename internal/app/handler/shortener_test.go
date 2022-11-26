@@ -3,13 +3,13 @@ package handler
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -20,23 +20,23 @@ import (
 )
 
 func testRequest(t *testing.T, r *http.Request) (int, string) {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	client := resty.New()
+	baseURL := fmt.Sprintf("%s://%s", r.URL.Scheme, r.URL.Host)
+
+	getDisableRedirectPolity := func() resty.RedirectPolicyFunc {
+		return func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
-		},
+		}
 	}
-	resp, err := client.Do(r)
+
+	resp, err := client.
+		SetBaseURL(baseURL).
+		SetRedirectPolicy(getDisableRedirectPolity()).
+		R().SetBody(r.Body).Execute(r.Method, r.URL.Path)
+
 	require.NoError(t, err)
 
-	t.Log(resp.Request)
-	t.Log(resp.Header)
-
-	respBody, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	defer resp.Body.Close()
-
-	return resp.StatusCode, string(respBody)
+	return resp.StatusCode(), string(resp.Body())
 }
 
 func TestNewShortener(t *testing.T) {
