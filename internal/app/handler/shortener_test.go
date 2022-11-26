@@ -66,7 +66,7 @@ func TestShortener_URLGetHandler(t *testing.T) {
 	shortener := NewShortener(shortURLRepository, randHashService)
 
 	router := chi.NewRouter()
-	router.Get("/{short_code}", shortener.URLGetHandler)
+	router.Get("/{shortCode}", shortener.URLGetHandler)
 
 	testServer := httptest.NewServer(router)
 	defer testServer.Close()

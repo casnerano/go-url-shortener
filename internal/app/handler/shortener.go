@@ -20,14 +20,14 @@ type Shortener struct {
 }
 
 func (s *Shortener) URLGetHandler(w http.ResponseWriter, r *http.Request) {
-	short_code := chi.URLParam(r, "short_code")
+	shortCode := chi.URLParam(r, "shortCode")
 
-	if short_code == "" {
+	if shortCode == "" {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	}
 
-	shortURL, err := s.rep.GetURLByCode(short_code)
+	shortURL, err := s.rep.GetURLByCode(shortCode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

@@ -19,7 +19,7 @@ func main() {
 
 	router := chi.NewRouter()
 
-	router.Get("/{short_code}", shortener.URLGetHandler)
+	router.Get("/{shortCode}", shortener.URLGetHandler)
 	router.Post("/", shortener.URLPostHandler)
 
 	log.Fatal(http.ListenAndServe(":8080", router))
