@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	shortURLRepository := repository.NewShortURL(storage.NewInMemory())
+	shortURLRepository := repository.NewShortURL(storage.NewMemory())
 	randHashService, _ := hash.NewRandom(5, 10)
 	shortener := handler.NewShortener(shortURLRepository, randHashService)
 

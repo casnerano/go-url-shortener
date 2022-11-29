@@ -7,16 +7,16 @@ import (
 
 type ShortURLDataStorage = map[string]model.ShortURL
 
-type InMemory struct {
+type Memory struct {
 	store ShortURLDataStorage
 }
 
-func (m *InMemory) AddURL(url model.ShortURL) error {
+func (m *Memory) AddURL(url model.ShortURL) error {
 	m.store[url.Code] = url
 	return nil
 }
 
-func (m *InMemory) GetURL(code string) (*model.ShortURL, error) {
+func (m *Memory) GetURL(code string) (*model.ShortURL, error) {
 	url, ok := m.store[code]
 	if !ok {
 		return nil, errors.New("url not found")
@@ -24,10 +24,10 @@ func (m *InMemory) GetURL(code string) (*model.ShortURL, error) {
 	return &url, nil
 }
 
-func (m *InMemory) Reset() {
+func (m *Memory) Reset() {
 	m.store = make(ShortURLDataStorage)
 }
 
-func NewInMemory() *InMemory {
-	return &InMemory{store: make(ShortURLDataStorage)}
+func NewMemory() *Memory {
+	return &Memory{store: make(ShortURLDataStorage)}
 }

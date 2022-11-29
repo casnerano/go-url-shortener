@@ -13,7 +13,7 @@ import (
 func TestInMemory_AddURL(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
-	m := NewInMemory()
+	m := NewMemory()
 	err := m.AddURL(*shortURLOne)
 	require.NoError(t, err)
 
@@ -26,7 +26,7 @@ func TestInMemory_AddURL(t *testing.T) {
 func TestInMemory_GetURL(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
-	m := NewInMemory()
+	m := NewMemory()
 	err := m.AddURL(*shortURLOne)
 	require.NoError(t, err)
 
@@ -40,13 +40,13 @@ func TestInMemory_GetURL(t *testing.T) {
 }
 
 func TestNewInMemory(t *testing.T) {
-	assert.Equal(t, InMemory{make(ShortURLDataStorage)}, *NewInMemory())
+	assert.Equal(t, Memory{make(ShortURLDataStorage)}, *NewMemory())
 }
 
 func TestInMemory_Reset(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
-	m := NewInMemory()
+	m := NewMemory()
 	err := m.AddURL(*shortURLOne)
 	require.NoError(t, err)
 

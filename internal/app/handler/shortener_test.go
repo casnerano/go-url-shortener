@@ -40,7 +40,7 @@ func testRequest(t *testing.T, r *http.Request) (int, string) {
 }
 
 func TestNewShortener(t *testing.T) {
-	shortURLRepository := repository.NewShortURL(storage.NewInMemory())
+	shortURLRepository := repository.NewShortURL(storage.NewMemory())
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(shortURLRepository, randHashService)
 
@@ -48,7 +48,7 @@ func TestNewShortener(t *testing.T) {
 }
 
 func TestShortener_addShortURL(t *testing.T) {
-	shortURLRepository := repository.NewShortURL(storage.NewInMemory())
+	shortURLRepository := repository.NewShortURL(storage.NewMemory())
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(shortURLRepository, randHashService)
 
@@ -60,7 +60,7 @@ func TestShortener_addShortURL(t *testing.T) {
 }
 
 func TestShortener_URLGetHandler(t *testing.T) {
-	store := storage.NewInMemory()
+	store := storage.NewMemory()
 	shortURLRepository := repository.NewShortURL(store)
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(shortURLRepository, randHashService)
@@ -97,7 +97,7 @@ func TestShortener_URLGetHandler(t *testing.T) {
 func TestShortener_URLPostHandler(t *testing.T) {
 	const regexpHTTP = "^https?://"
 
-	store := storage.NewInMemory()
+	store := storage.NewMemory()
 	shortURLRepository := repository.NewShortURL(store)
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(shortURLRepository, randHashService)

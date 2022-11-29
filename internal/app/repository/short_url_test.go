@@ -12,14 +12,14 @@ import (
 )
 
 func TestNewShortURL(t *testing.T) {
-	store := storage.NewInMemory()
+	store := storage.NewMemory()
 	assert.Equal(t, ShortURL{storage: store}, *NewShortURL(store))
 }
 
 func TestShortURL_AddURL(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
-	store := storage.NewInMemory()
+	store := storage.NewMemory()
 	rep := NewShortURL(store)
 
 	err := rep.AddURL(*shortURLOne)
@@ -34,7 +34,7 @@ func TestShortURL_AddURL(t *testing.T) {
 func TestShortURL_GetURLByCode(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
-	store := storage.NewInMemory()
+	store := storage.NewMemory()
 	rep := NewShortURL(store)
 
 	err := rep.AddURL(*shortURLOne)
