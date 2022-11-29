@@ -19,6 +19,10 @@ type Shortener struct {
 	hash hash.Hash
 }
 
+func NewShortener(r *repository.ShortURL, h hash.Hash) *Shortener {
+	return &Shortener{rep: r, hash: h}
+}
+
 func (s *Shortener) URLGetHandler(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "shortCode")
 
@@ -80,8 +84,4 @@ func (s *Shortener) addShortURL(url string, lifeTime time.Duration) (string, err
 		return "", errors.New("url adding error")
 	}
 	return h, nil
-}
-
-func NewShortener(r *repository.ShortURL, h hash.Hash) *Shortener {
-	return &Shortener{rep: r, hash: h}
 }
