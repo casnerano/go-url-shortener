@@ -15,7 +15,7 @@ type Random struct {
 }
 
 func (r Random) Generate(string) string {
-	l := rand.Intn(r.maxLen-r.minLen) + r.minLen
+	l := rand.Intn(r.maxLen-r.minLen+1) + r.minLen
 	return r.getRandomString(l)
 }
 

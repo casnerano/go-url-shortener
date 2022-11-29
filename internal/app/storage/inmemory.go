@@ -16,12 +16,16 @@ func (m *InMemory) AddURL(url model.ShortURL) error {
 	return nil
 }
 
-func (m InMemory) GetURL(code string) (*model.ShortURL, error) {
+func (m *InMemory) GetURL(code string) (*model.ShortURL, error) {
 	url, ok := m.store[code]
 	if !ok {
 		return nil, errors.New("url not found")
 	}
 	return &url, nil
+}
+
+func (m *InMemory) Reset() {
+	m.store = make(ShortURLDataStorage)
 }
 
 func NewInMemory() *InMemory {
