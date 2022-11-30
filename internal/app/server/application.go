@@ -2,6 +2,8 @@ package server
 
 import (
 	"flag"
+	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -25,6 +27,7 @@ func NewApplication() *Application {
 
 func (app *Application) Run() error {
 	app.initConfig()
+	fmt.Println(app.cfg)
 	app.initRoutes()
 	return app.runServer()
 }
@@ -41,7 +44,9 @@ func (app *Application) initConfig() {
 	app.cfg = config.New()
 
 	if cfgName := app.extractAppConfigName(); cfgName != "" {
-		_ = config.Unmarshal(cfgName, app.cfg)
+		if err := config.Unmarshal(cfgName, app.cfg); err != nil {
+			log.Printf("failed to read file %s", cfgName)
+		}
 	}
 }
 
