@@ -12,7 +12,7 @@ type Config struct {
 	Storage    struct {
 		Type StorageType `json:"type" yaml:"type"`
 		DSN  string      `json:"DSN" yaml:"DSN"`
-	} `json:"storage" yaml:"storage"`
+	} `json:"repository" yaml:"repository"`
 	ShortURL struct {
 		TTL int `yaml:"TTL"`
 	} `json:"shortURL" yaml:"shortURL"`

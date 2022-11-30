@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,11 +14,11 @@ import (
 )
 
 type Shortener struct {
-	rep  *repository.ShortURL
+	rep  repository.URLRepository
 	hash hash.Hash
 }
 
-func NewShortener(r *repository.ShortURL, h hash.Hash) *Shortener {
+func NewShortener(r repository.URLRepository, h hash.Hash) *Shortener {
 	return &Shortener{rep: r, hash: h}
 }
 
@@ -31,15 +30,9 @@ func (s *Shortener) URLGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shortURL, err := s.rep.GetURLByCode(shortCode)
+	shortURL, err := s.rep.GetByCode(r.Context(), shortCode)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
-		return
-	}
-
-	if shortURL.CreatedAt.Add(shortURL.LifeTime).Before(time.Now()) {
-		w.WriteHeader(http.StatusNoContent)
-		fmt.Fprint(w, "url lifetime is expired")
 		return
 	}
 
@@ -62,9 +55,11 @@ func (s *Shortener) URLPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := s.addShortURL(originalURL, 1*time.Minute)
+	lifeTime := 1 * time.Minute
+	code := s.hash.Generate(originalURL)
+	err = s.rep.Add(r.Context(), *model.NewShortURL(code, originalURL, lifeTime))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "url adding error", http.StatusInternalServerError)
 		return
 	}
 
@@ -75,13 +70,4 @@ func (s *Shortener) URLPostHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	fmt.Fprintf(w, "%s://%s/%s", scheme, r.Host, code)
-}
-
-func (s *Shortener) addShortURL(url string, lifeTime time.Duration) (string, error) {
-	h := s.hash.Generate(url)
-	err := s.rep.AddURL(*model.NewShortURL(h, url, lifeTime))
-	if err != nil {
-		return "", errors.New("url adding error")
-	}
-	return h, nil
 }
