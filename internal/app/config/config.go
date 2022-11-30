@@ -8,14 +8,14 @@ const (
 )
 
 type Config struct {
-	ServerAddr string `json:"serverAddr" yaml:"serverAddr"`
+	ServerAddr string `json:"server_addr" yaml:"server_addr"`
 	Storage    struct {
 		Type StorageType `json:"type" yaml:"type"`
-		DSN  string      `json:"DSN" yaml:"DSN"`
-	} `json:"repository" yaml:"repository"`
+		DSN  string      `json:"dsn" yaml:"dsn"`
+	} `json:"storage" yaml:"storage"`
 	ShortURL struct {
-		TTL int `yaml:"TTL"`
-	} `json:"shortURL" yaml:"shortURL"`
+		TTL int `yaml:"ttl"`
+	} `json:"short_url" yaml:"short_url"`
 }
 
 func New() *Config {
@@ -27,5 +27,5 @@ func New() *Config {
 func (c *Config) SetDefaultValues() {
 	c.ServerAddr = "localhost:8080"
 	c.Storage.Type = StorageTypeMemory
-	c.ShortURL.TTL = 0
+	c.ShortURL.TTL = 30
 }

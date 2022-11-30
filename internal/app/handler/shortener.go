@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -57,13 +56,8 @@ func (s *Shortener) URLPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lifeTime := time.Duration(0)
-	if s.conf.ShortURL.TTL > 0 {
-		lifeTime = time.Duration(s.conf.ShortURL.TTL) * time.Second
-	}
-
 	code := s.hash.Generate(originalURL)
-	err = s.rep.Add(r.Context(), *model.NewShortURL(code, originalURL, lifeTime))
+	err = s.rep.Add(r.Context(), *model.NewShortURL(code, originalURL))
 	if err != nil {
 		http.Error(w, "url adding error", http.StatusInternalServerError)
 		return

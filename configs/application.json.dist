@@ -1,0 +1,10 @@
+{
+  "server_addr": "localhost:8080",
+  "storage": {
+    "type": "database",
+    "dsn": "postgres://gofer:123456@localhost:5432/shortener"
+  },
+  "short_url": {
+    "ttl": 360
+  }
+}
