@@ -1,6 +1,0 @@
-serverAddr: "localhost:8080"
-storage:
-  type: memoryss
-  DSN: ""
-shortURL:
-  TTL: 60

@@ -1,7 +1,9 @@
-package storage
+package repository
 
 import (
+	"context"
 	"errors"
+
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
@@ -11,12 +13,12 @@ type Memory struct {
 	store ShortURLDataStorage
 }
 
-func (m *Memory) AddURL(url model.ShortURL) error {
+func (m *Memory) Add(_ context.Context, url model.ShortURL) error {
 	m.store[url.Code] = url
 	return nil
 }
 
-func (m *Memory) GetURL(code string) (*model.ShortURL, error) {
+func (m *Memory) GetByCode(_ context.Context, code string) (*model.ShortURL, error) {
 	url, ok := m.store[code]
 	if !ok {
 		return nil, errors.New("url not found")
@@ -24,8 +26,14 @@ func (m *Memory) GetURL(code string) (*model.ShortURL, error) {
 	return &url, nil
 }
 
-func (m *Memory) Reset() {
-	m.store = make(ShortURLDataStorage)
+func (m *Memory) DeleteByCode(_ context.Context, code string) error {
+	_, ok := m.store[code]
+	if !ok {
+		return errors.New("url not found")
+	}
+
+	delete(m.store, code)
+	return nil
 }
 
 func NewMemory() *Memory {

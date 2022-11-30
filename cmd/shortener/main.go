@@ -11,7 +11,6 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
-	"github.com/casnerano/go-url-shortener/internal/app/storage"
 )
 
 func main() {
@@ -23,13 +22,14 @@ func main() {
 		_ = config.Unmarshal(configFilename, conf)
 	}
 
-	store := storage.NewMemory()
-	if conf.Storage.Type == config.STORAGE_TYPE_MEMORY {
+	var URLRepository repository.URLRepository
+	switch conf.Storage.Type {
+	default:
+		URLRepository = repository.NewMemory()
 	}
 
-	shortURLRepository := repository.NewShortURL(store)
 	randHashService, _ := hash.NewRandom(5, 10)
-	shortener := handler.NewShortener(shortURLRepository, randHashService)
+	shortener := handler.NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 

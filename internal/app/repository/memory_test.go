@@ -1,6 +1,7 @@
-package storage
+package repository
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -10,46 +11,47 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
-func TestInMemory_AddURL(t *testing.T) {
+func TestMemory_Add(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
 	m := NewMemory()
-	err := m.AddURL(*shortURLOne)
+	err := m.Add(context.Background(), *shortURLOne)
 	require.NoError(t, err)
 
-	got, err := m.GetURL(shortURLOne.Code)
+	got, err := m.GetByCode(context.Background(), shortURLOne.Code)
 	require.NoError(t, err)
 
 	assert.Equal(t, shortURLOne, got)
 }
 
-func TestInMemory_GetURL(t *testing.T) {
+func TestMemory_GetByCode(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
 	m := NewMemory()
-	err := m.AddURL(*shortURLOne)
+	err := m.Add(context.Background(), *shortURLOne)
 	require.NoError(t, err)
 
-	got, err := m.GetURL(shortURLOne.Code)
+	got, err := m.GetByCode(context.Background(), shortURLOne.Code)
 	require.NoError(t, err)
 
 	assert.Equal(t, shortURLOne, got)
 
-	_, err = m.GetURL("non-existent-code")
+	_, err = m.GetByCode(context.Background(), "non-existent-code")
 	assert.Error(t, err)
 }
 
-func TestNewInMemory(t *testing.T) {
+func TestNewMemory(t *testing.T) {
 	assert.Equal(t, Memory{make(ShortURLDataStorage)}, *NewMemory())
 }
 
-func TestInMemory_Reset(t *testing.T) {
+func TestMemory_DeleteByCode(t *testing.T) {
 	shortURLOne := model.NewShortURL("short#1", "large#1", time.Second)
 
 	m := NewMemory()
-	err := m.AddURL(*shortURLOne)
+	err := m.Add(context.Background(), *shortURLOne)
 	require.NoError(t, err)
 
-	m.Reset()
+	err = m.DeleteByCode(context.Background(), shortURLOne.Code)
+	require.NoError(t, err)
 	assert.Equal(t, 0, len(m.store))
 }
