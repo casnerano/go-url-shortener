@@ -23,7 +23,7 @@ func main() {
 	}
 
 	URLRepository := repository.NewMemory()
-	if conf.Storage.Type == config.STORAGE_TYPE_MEMORY {
+	if conf.Storage.Type == config.StorageTypeMemory {
 	}
 
 	randHashService, _ := hash.NewRandom(5, 10)

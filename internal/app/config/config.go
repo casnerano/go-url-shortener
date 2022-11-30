@@ -3,8 +3,8 @@ package config
 type StorageType string
 
 const (
-	STORAGE_TYPE_MEMORY   StorageType = "memory"
-	STORAGE_TYPE_DATABASE StorageType = "database"
+	StorageTypeMemory   StorageType = "memory"
+	StorageTypeDatabase StorageType = "database"
 )
 
 type Config struct {
@@ -26,6 +26,6 @@ func New() *Config {
 
 func (c *Config) SetDefaultValues() {
 	c.ServerAddr = "localhost:8080"
-	c.Storage.Type = STORAGE_TYPE_MEMORY
+	c.Storage.Type = StorageTypeMemory
 	c.ShortURL.TTL = 60
 }
