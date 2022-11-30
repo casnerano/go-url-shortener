@@ -3,10 +3,10 @@ package main
 import (
 	"log"
 
-	"github.com/casnerano/go-url-shortener/internal/app"
+	"github.com/casnerano/go-url-shortener/internal/app/server"
 )
 
 func main() {
-	application := app.NewApplication()
-	log.Fatal(application.Run())
+	app := server.NewApplication()
+	log.Fatal(app.Run())
 }
