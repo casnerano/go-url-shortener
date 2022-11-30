@@ -68,7 +68,7 @@ func TestShortener_URLGetHandler(t *testing.T) {
 	})
 
 	t.Run("get existing url", func(t *testing.T) {
-		shortURLOne := model.NewShortURL("short", "large", time.Hour)
+		shortURLOne := model.NewShortURL("short", "large", time.Duration(0))
 
 		err := URLRepository.Add(context.Background(), *shortURLOne)
 		require.NoError(t, err)
