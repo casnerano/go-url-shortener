@@ -29,7 +29,7 @@ func main() {
 	}
 
 	randHashService, _ := hash.NewRandom(5, 10)
-	shortener := handler.NewShortener(URLRepository, randHashService)
+	shortener := handler.NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
@@ -40,17 +41,19 @@ func testRequest(t *testing.T, r *http.Request) (int, string) {
 }
 
 func TestNewShortener(t *testing.T) {
+	conf := &config.Config{}
 	URLRepository := repository.NewMemory()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(URLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
-	assert.Equal(t, Shortener{URLRepository, randHashService}, *shortener)
+	assert.Equal(t, Shortener{conf, URLRepository, randHashService}, *shortener)
 }
 
 func TestShortener_URLGetHandler(t *testing.T) {
+	conf := &config.Config{}
 	URLRepository := repository.NewMemory()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(URLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 	router.Get("/{shortCode}", shortener.URLGetHandler)
@@ -81,9 +84,10 @@ func TestShortener_URLGetHandler(t *testing.T) {
 func TestShortener_URLPostHandler(t *testing.T) {
 	const regexpHTTP = "^https?://"
 
+	conf := &config.Config{}
 	URLRepository := repository.NewMemory()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(URLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 	router.Post("/", shortener.URLPostHandler)

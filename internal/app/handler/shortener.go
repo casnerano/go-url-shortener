@@ -8,18 +8,20 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
 type Shortener struct {
+	conf *config.Config
 	rep  repository.URLRepository
 	hash hash.Hash
 }
 
-func NewShortener(r repository.URLRepository, h hash.Hash) *Shortener {
-	return &Shortener{rep: r, hash: h}
+func NewShortener(c *config.Config, r repository.URLRepository, h hash.Hash) *Shortener {
+	return &Shortener{conf: c, rep: r, hash: h}
 }
 
 func (s *Shortener) URLGetHandler(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +57,7 @@ func (s *Shortener) URLPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lifeTime := 1 * time.Minute
+	lifeTime := time.Duration(s.conf.ShortURL.TTL) * time.Second
 	code := s.hash.Generate(originalURL)
 	err = s.rep.Add(r.Context(), *model.NewShortURL(code, originalURL, lifeTime))
 	if err != nil {
