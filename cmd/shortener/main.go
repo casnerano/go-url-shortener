@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 
@@ -17,9 +17,12 @@ func main() {
 	// Дефолтная конфигурация
 	conf := config.New()
 
-	// Пытаемся подключить конфиг. файл из переменных окружения
-	if configFilename := os.Getenv("CONFIG_FILENAME"); configFilename != "" {
-		_ = config.Unmarshal(configFilename, conf)
+	// Пытаемся подключить конфиг. файл из параметров запуска приложения
+	confName := flag.String("config", "", "app configuration filename")
+	flag.Parse()
+
+	if *confName != "" {
+		_ = config.Unmarshal(*confName, conf)
 	}
 
 	var URLRepository repository.URLRepository
