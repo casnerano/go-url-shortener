@@ -22,9 +22,6 @@ func main() {
 		_ = config.Unmarshal(configFilename, conf)
 	}
 
-	if conf.Storage.Type == config.StorageTypeMemory {
-	}
-
 	var URLRepository repository.URLRepository
 	switch conf.Storage.Type {
 	default:
