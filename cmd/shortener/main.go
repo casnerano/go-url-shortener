@@ -22,8 +22,13 @@ func main() {
 		_ = config.Unmarshal(configFilename, conf)
 	}
 
-	URLRepository := repository.NewMemory()
 	if conf.Storage.Type == config.StorageTypeMemory {
+	}
+
+	var URLRepository repository.URLRepository
+	switch conf.Storage.Type {
+	default:
+		URLRepository = repository.NewMemory()
 	}
 
 	randHashService, _ := hash.NewRandom(5, 10)
