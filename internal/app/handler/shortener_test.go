@@ -1,23 +1,22 @@
 package handler
 
 import (
-	"bytes"
-	"context"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "bytes"
+    "context"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+    "github.com/go-chi/chi/v5"
+    "github.com/go-resty/resty/v2"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
 
-	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/model"
-	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
-	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
+    "github.com/casnerano/go-url-shortener/internal/app/config"
+    "github.com/casnerano/go-url-shortener/internal/app/model"
+    "github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
+    "github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
 func testRequest(t *testing.T, r *http.Request) (int, string) {
@@ -68,7 +67,7 @@ func TestShortener_URLGetHandler(t *testing.T) {
 	})
 
 	t.Run("get existing url", func(t *testing.T) {
-		shortURLOne := model.NewShortURL("short", "large", time.Duration(0))
+		shortURLOne := model.NewShortURL("short", "large")
 
 		err := URLRepository.Add(context.Background(), *shortURLOne)
 		require.NoError(t, err)
