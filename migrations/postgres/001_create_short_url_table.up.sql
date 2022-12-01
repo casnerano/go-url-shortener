@@ -3,6 +3,6 @@ create table if not exists short_url (
   primary key (id),
   code varchar(64) unique not null,
   original varchar(255) not null,
-  created_at timestamp not null,
-  deleted_at timestamp not null,
+  created_at timestamp DEFAULT now(),
+  deleted_at timestamp not null
 );
