@@ -9,12 +9,13 @@ import (
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
+	"github.com/casnerano/go-url-shortener/internal/app/migration"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
 type Application struct {
-	cfg    *config.Config
+	Config *config.Config
 	router *chi.Mux
 }
 
@@ -39,10 +40,10 @@ func (app *Application) extractAppConfigName() string {
 
 // Инициализация конфигурации
 func (app *Application) initConfig() {
-	app.cfg = config.New()
+	app.Config = config.New()
 
 	if cfgName := app.extractAppConfigName(); cfgName != "" {
-		if err := config.Unmarshal(cfgName, app.cfg); err != nil {
+		if err := config.Unmarshal(cfgName, app.Config); err != nil {
 			log.Printf("failed to read file %s", cfgName)
 		}
 	}
@@ -58,13 +59,13 @@ func (app *Application) initRoutes() {
 
 // Запуск сервера
 func (app *Application) runServer() error {
-	return http.ListenAndServe(app.cfg.ServerAddr, app.router)
+	return http.ListenAndServe(app.Config.ServerAddr, app.router)
 }
 
 // Текущий репозиторий для URL
 // По умолчанию - repository.Memory
 func (app *Application) getURLRepository() (rep repository.URLRepository) {
-	switch app.cfg.Storage.Type {
+	switch app.Config.Storage.Type {
 	default:
 		rep = repository.NewMemory()
 	}
@@ -81,5 +82,10 @@ func (app *Application) getURLHashService() (h hash.Hash) {
 func (app *Application) getShortenerHandlerGroup() *handler.Shortener {
 	URLRepository := app.getURLRepository()
 	hashService := app.getURLHashService()
-	return handler.NewShortener(app.cfg, URLRepository, hashService)
+	return handler.NewShortener(app.Config, URLRepository, hashService)
+}
+
+func (app *Application) LoadMigrations() error {
+	migrator := migration.NewManager(app.Config)
+	return migrator.LoadMigrations()
 }
