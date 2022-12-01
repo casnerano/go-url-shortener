@@ -11,11 +11,13 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/migration"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
 type Application struct {
 	Config *config.Config
+	store  repository.Store
 	router *chi.Mux
 }
 
@@ -27,6 +29,7 @@ func NewApplication() *Application {
 
 func (app *Application) Run() error {
 	app.initConfig()
+	app.initRepositoryStore()
 	app.initRoutes()
 	return app.runServer()
 }
@@ -49,6 +52,15 @@ func (app *Application) initConfig() {
 	}
 }
 
+// Группа репозиториев для хранилища
+// По умолчанию - хранилище в озу - memstore.Store
+func (app *Application) initRepositoryStore() {
+	switch app.Config.Storage.Type {
+	default:
+		app.store = memstore.NewStore()
+	}
+}
+
 // Инициализация роутов
 func (app *Application) initRoutes() {
 	shortener := app.getShortenerHandlerGroup()
@@ -62,16 +74,6 @@ func (app *Application) runServer() error {
 	return http.ListenAndServe(app.Config.ServerAddr, app.router)
 }
 
-// Текущий репозиторий для URL
-// По умолчанию - repository.Memory
-func (app *Application) getURLRepository() (rep repository.URLRepository) {
-	switch app.Config.Storage.Type {
-	default:
-		rep = repository.NewMemory()
-	}
-	return
-}
-
 // Сервис для сокращения URL
 func (app *Application) getURLHashService() (h hash.Hash) {
 	h, _ = hash.NewRandom(5, 10)
@@ -80,7 +82,7 @@ func (app *Application) getURLHashService() (h hash.Hash) {
 
 // Группа обработчиков для сокращения URL
 func (app *Application) getShortenerHandlerGroup() *handler.Shortener {
-	URLRepository := app.getURLRepository()
+	URLRepository := app.store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortener(app.Config, URLRepository, hashService)
 }

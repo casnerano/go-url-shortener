@@ -16,7 +16,7 @@ import (
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
-	"github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
@@ -42,7 +42,7 @@ func testRequest(t *testing.T, r *http.Request) (int, string) {
 
 func TestNewShortener(t *testing.T) {
 	conf := &config.Config{}
-	URLRepository := repository.NewMemory()
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(conf, URLRepository, randHashService)
 
@@ -51,7 +51,7 @@ func TestNewShortener(t *testing.T) {
 
 func TestShortener_URLGetHandler(t *testing.T) {
 	conf := &config.Config{}
-	URLRepository := repository.NewMemory()
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(conf, URLRepository, randHashService)
 
@@ -85,7 +85,7 @@ func TestShortener_URLPostHandler(t *testing.T) {
 	const regexpHTTP = "^https?://"
 
 	conf := &config.Config{}
-	URLRepository := repository.NewMemory()
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
 	shortener := NewShortener(conf, URLRepository, randHashService)
 
