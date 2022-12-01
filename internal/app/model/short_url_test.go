@@ -12,12 +12,10 @@ func TestNewShortURL(t *testing.T) {
 		"short#1",
 		"large#1",
 		time.Now(),
-		time.Now().Add(time.Hour),
 	}
 
 	got := NewShortURL(shortURLOne.Code, shortURLOne.Original)
 	got.CreatedAt = shortURLOne.CreatedAt
-	got.DeletedAt = shortURLOne.DeletedAt
 
 	assert.Equal(t, shortURLOne, *got)
 }
