@@ -2,7 +2,6 @@ package server
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -27,7 +26,6 @@ func NewApplication() *Application {
 
 func (app *Application) Run() error {
 	app.initConfig()
-	fmt.Println(app.cfg)
 	app.initRoutes()
 	return app.runServer()
 }
