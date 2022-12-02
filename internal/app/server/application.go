@@ -22,15 +22,19 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	return &Application{
-		router: chi.NewRouter(),
-	}
+	app := &Application{}
+	app.init()
+	return app
+}
+
+func (app *Application) init() {
+	app.initConfig()
+	app.initRepositoryStore()
+	app.initRouter()
+	app.initRoutes()
 }
 
 func (app *Application) Run() error {
-	app.initConfig()
-	app.initRepositoryStore()
-	app.initRoutes()
 	return app.runServer()
 }
 
@@ -50,6 +54,10 @@ func (app *Application) initConfig() {
 			log.Printf("failed to read file %s", cfgName)
 		}
 	}
+}
+
+func (app *Application) initRouter() {
+	app.router = chi.NewRouter()
 }
 
 // Группа репозиториев для хранилища
