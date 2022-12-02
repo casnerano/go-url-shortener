@@ -15,38 +15,39 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
-type Application struct {
+type application struct {
 	Config *config.Config
-	store  repository.Store
+	Store  repository.Store
 	router *chi.Mux
 }
 
-func NewApplication() *Application {
-	app := &Application{}
+func NewApplication() *application {
+	app := &application{}
 	app.init()
 	return app
 }
 
-func (app *Application) init() {
+func (app *application) init() {
 	app.initConfig()
 	app.initRepositoryStore()
 	app.initRouter()
 	app.initRoutes()
 }
 
-func (app *Application) Run() error {
-	return app.runServer()
+// Запуск сервера
+func (app *application) RunServer() error {
+	return http.ListenAndServe(app.Config.ServerAddr, app.router)
 }
 
 // Путь к файлу конфигурации из параметров запуска приложения
-func (app *Application) extractAppConfigName() string {
+func (app *application) extractAppConfigName() string {
 	confName := flag.String("config", "", "app configuration filename")
 	flag.Parse()
 	return *confName
 }
 
 // Инициализация конфигурации
-func (app *Application) initConfig() {
+func (app *application) initConfig() {
 	app.Config = config.New()
 
 	if cfgName := app.extractAppConfigName(); cfgName != "" {
@@ -56,46 +57,41 @@ func (app *Application) initConfig() {
 	}
 }
 
-func (app *Application) initRouter() {
+func (app *application) initRouter() {
 	app.router = chi.NewRouter()
 }
 
 // Группа репозиториев для хранилища
 // По умолчанию - хранилище в озу - memstore.Store
-func (app *Application) initRepositoryStore() {
+func (app *application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
 	default:
-		app.store = memstore.NewStore()
+		app.Store = memstore.NewStore()
 	}
 }
 
 // Инициализация роутов
-func (app *Application) initRoutes() {
+func (app *application) initRoutes() {
 	shortener := app.getShortenerHandlerGroup()
 
 	app.router.Get("/{shortCode}", shortener.URLGetHandler)
 	app.router.Post("/", shortener.URLPostHandler)
 }
 
-// Запуск сервера
-func (app *Application) runServer() error {
-	return http.ListenAndServe(app.Config.ServerAddr, app.router)
-}
-
 // Сервис для сокращения URL
-func (app *Application) getURLHashService() (h hash.Hash) {
+func (app *application) getURLHashService() (h hash.Hash) {
 	h, _ = hash.NewRandom(5, 10)
 	return
 }
 
 // Группа обработчиков для сокращения URL
-func (app *Application) getShortenerHandlerGroup() *handler.Shortener {
-	URLRepository := app.store.URL()
+func (app *application) getShortenerHandlerGroup() *handler.Shortener {
+	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortener(app.Config, URLRepository, hashService)
 }
 
-func (app *Application) LoadMigrations() error {
+func (app *application) LoadMigrations() error {
 	migrator := migration.NewManager(app.Config)
 	return migrator.LoadMigrations()
 }

@@ -2,6 +2,7 @@ package sqlstore
 
 import (
 	"context"
+	"time"
 
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
@@ -39,6 +40,15 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
 		ctx,
 		"delete from short_url where code = $1",
 		code,
+	)
+	return err
+}
+
+func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
+	_, err := rep.store.db.Exec(
+		ctx,
+		"delete from short_url where created_at > $1",
+		time.Now().Add(d),
 	)
 	return err
 }
