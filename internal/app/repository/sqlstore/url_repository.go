@@ -21,6 +21,7 @@ func (rep *URLRepository) Add(ctx context.Context, url model.ShortURL) error {
 }
 
 func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *model.ShortURL, err error) {
+	url = &model.ShortURL{}
 	err = rep.store.db.QueryRow(
 		ctx,
 		"SELECT code, original, created_at FROM short_url WHERE code = $1",
