@@ -27,5 +27,5 @@ func New() *Config {
 func (c *Config) SetDefaultValues() {
 	c.ServerAddr = "localhost:8080"
 	c.Storage.Type = StorageTypeMemory
-	c.ShortURL.TTL = 30
+	c.ShortURL.TTL = 0
 }
