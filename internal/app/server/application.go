@@ -1,16 +1,20 @@
 package server
 
 import (
+	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
+	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
@@ -35,6 +39,8 @@ func (app *application) init() {
 
 // Запуск сервера
 func (app *application) RunServer() error {
+	fmt.Printf("Server started: %s\n", app.Config.ServerAddr)
+	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
 	return http.ListenAndServe(app.Config.ServerAddr, app.router)
 }
 
@@ -64,6 +70,13 @@ func (app *application) initRouter() {
 // По умолчанию - хранилище в озу - memstore.Store
 func (app *application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
+	case config.StorageTypeDatabase:
+		dsn := app.Config.Storage.DSN
+		pgxConn, err := pgx.Connect(context.TODO(), dsn)
+		if err != nil {
+			log.Fatalf("Failed to connect to the database using dsn \"%s\"", dsn)
+		}
+		app.Store = sqlstore.NewStore(pgxConn)
 	default:
 		app.Store = memstore.NewStore()
 	}
