@@ -51,7 +51,7 @@ func (app *application) initConfig() {
 
 	if cfgName := app.extractAppConfigName(); cfgName != "" {
 		if err := config.Unmarshal(cfgName, app.Config); err != nil {
-			log.Printf("failed to read file %s", cfgName)
+			log.Fatal("failed to read file %s", cfgName)
 		}
 	}
 }
