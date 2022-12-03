@@ -1,6 +1,4 @@
 tests:
 	go test -count=1 -cover ./...
-run-server:
-	go run -config=./configs/application.yaml
-load-migrations:
+migrate:
 	migrate -database postgres://gofer:gofer@localhost:5432/shortener?sslmode=disable -source file://migrations up

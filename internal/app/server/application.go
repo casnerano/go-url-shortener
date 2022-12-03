@@ -9,7 +9,6 @@ import (
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
-	"github.com/casnerano/go-url-shortener/internal/app/migration"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
@@ -89,9 +88,4 @@ func (app *application) getShortenerHandlerGroup() *handler.Shortener {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortener(app.Config, URLRepository, hashService)
-}
-
-func (app *application) LoadMigrations() error {
-	migrator := migration.NewManager(app.Config)
-	return migrator.LoadMigrations()
 }
