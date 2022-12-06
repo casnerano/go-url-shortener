@@ -18,19 +18,19 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
-type application struct {
+type Application struct {
 	Config *config.Config
 	Store  repository.Store
 	router *chi.Mux
 }
 
-func NewApplication() *application {
-	app := &application{}
+func NewApplication() *Application {
+	app := &Application{}
 	app.init()
 	return app
 }
 
-func (app *application) init() {
+func (app *Application) init() {
 	app.initConfig()
 	app.initRepositoryStore()
 	app.initRouter()
@@ -38,21 +38,21 @@ func (app *application) init() {
 }
 
 // Запуск сервера
-func (app *application) RunServer() error {
+func (app *Application) RunServer() error {
 	fmt.Printf("Server started: %s\n", app.Config.ServerAddr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
 	return http.ListenAndServe(app.Config.ServerAddr, app.router)
 }
 
 // Путь к файлу конфигурации из параметров запуска приложения
-func (app *application) extractAppConfigName() string {
+func (app *Application) extractAppConfigName() string {
 	confName := flag.String("config", "", "app configuration filename")
 	flag.Parse()
 	return *confName
 }
 
 // Инициализация конфигурации
-func (app *application) initConfig() {
+func (app *Application) initConfig() {
 	app.Config = config.New()
 
 	if cfgName := app.extractAppConfigName(); cfgName != "" {
@@ -62,13 +62,13 @@ func (app *application) initConfig() {
 	}
 }
 
-func (app *application) initRouter() {
+func (app *Application) initRouter() {
 	app.router = chi.NewRouter()
 }
 
 // Группа репозиториев для хранилища
 // По умолчанию - хранилище в озу - memstore.Store
-func (app *application) initRepositoryStore() {
+func (app *Application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
 	case config.StorageTypeDatabase:
 		dsn := app.Config.Storage.DSN
@@ -83,7 +83,7 @@ func (app *application) initRepositoryStore() {
 }
 
 // Инициализация роутов
-func (app *application) initRoutes() {
+func (app *Application) initRoutes() {
 	shortener := app.getShortenerHandlerGroup()
 
 	app.router.Get("/{shortCode}", shortener.URLGetHandler)
@@ -91,13 +91,13 @@ func (app *application) initRoutes() {
 }
 
 // Сервис для сокращения URL
-func (app *application) getURLHashService() (h hash.Hash) {
+func (app *Application) getURLHashService() (h hash.Hash) {
 	h, _ = hash.NewRandom(5, 10)
 	return
 }
 
 // Группа обработчиков для сокращения URL
-func (app *application) getShortenerHandlerGroup() *handler.Shortener {
+func (app *Application) getShortenerHandlerGroup() *handler.Shortener {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortener(app.Config, URLRepository, hashService)
