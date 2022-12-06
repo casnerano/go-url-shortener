@@ -1,22 +1,22 @@
 package handler
 
 import (
-	"bytes"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
+    "bytes"
+    "context"
+    "fmt"
+    "net/http"
+    "net/http/httptest"
+    "testing"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+    "github.com/go-chi/chi/v5"
+    "github.com/go-resty/resty/v2"
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
 
-	"github.com/casnerano/go-url-shortener/internal/app/model"
-	"github.com/casnerano/go-url-shortener/internal/app/repository"
-	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
-	"github.com/casnerano/go-url-shortener/internal/app/storage"
+    "github.com/casnerano/go-url-shortener/internal/app/config"
+    "github.com/casnerano/go-url-shortener/internal/app/model"
+    "github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
+    "github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
 )
 
 func testRequest(t *testing.T, r *http.Request) (int, string) {
@@ -40,30 +40,19 @@ func testRequest(t *testing.T, r *http.Request) (int, string) {
 }
 
 func TestNewShortener(t *testing.T) {
-	shortURLRepository := repository.NewShortURL(storage.NewMemory())
+	conf := &config.Config{}
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(shortURLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
-	assert.Equal(t, Shortener{shortURLRepository, randHashService}, *shortener)
-}
-
-func TestShortener_addShortURL(t *testing.T) {
-	shortURLRepository := repository.NewShortURL(storage.NewMemory())
-	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(shortURLRepository, randHashService)
-
-	code, err := shortener.addShortURL("large#1", time.Minute)
-	require.NoError(t, err)
-
-	_, err = shortURLRepository.GetURLByCode(code)
-	assert.NoError(t, err)
+	assert.Equal(t, Shortener{conf, URLRepository, randHashService}, *shortener)
 }
 
 func TestShortener_URLGetHandler(t *testing.T) {
-	store := storage.NewMemory()
-	shortURLRepository := repository.NewShortURL(store)
+	conf := &config.Config{}
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(shortURLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 	router.Get("/{shortCode}", shortener.URLGetHandler)
@@ -72,18 +61,15 @@ func TestShortener_URLGetHandler(t *testing.T) {
 	defer testServer.Close()
 
 	t.Run("get non-existent url", func(t *testing.T) {
-		store.Reset()
-
 		request, _ := http.NewRequest(http.MethodGet, testServer.URL+"/non-existent-code", nil)
 		statusCode, _ := testRequest(t, request)
 		require.Equal(t, http.StatusNotFound, statusCode)
 	})
 
 	t.Run("get existing url", func(t *testing.T) {
-		store.Reset()
-		shortURLOne := model.NewShortURL("short", "large", time.Hour)
+		shortURLOne := model.NewShortURL("short", "large")
 
-		err := store.AddURL(*shortURLOne)
+		err := URLRepository.Add(context.Background(), *shortURLOne)
 		require.NoError(t, err)
 
 		requestTarget := fmt.Sprintf("%s/%s", testServer.URL, shortURLOne.Code)
@@ -97,10 +83,10 @@ func TestShortener_URLGetHandler(t *testing.T) {
 func TestShortener_URLPostHandler(t *testing.T) {
 	const regexpHTTP = "^https?://"
 
-	store := storage.NewMemory()
-	shortURLRepository := repository.NewShortURL(store)
+	conf := &config.Config{}
+	URLRepository := memstore.NewStore().URL()
 	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(shortURLRepository, randHashService)
+	shortener := NewShortener(conf, URLRepository, randHashService)
 
 	router := chi.NewRouter()
 	router.Post("/", shortener.URLPostHandler)
@@ -109,8 +95,6 @@ func TestShortener_URLPostHandler(t *testing.T) {
 	defer testServer.Close()
 
 	t.Run("post url for shorten", func(t *testing.T) {
-		store.Reset()
-
 		body := []byte(`https://ya.ru`)
 		request, _ := http.NewRequest(http.MethodPost, testServer.URL+"/", bytes.NewBuffer(body))
 		statusCode, payload := testRequest(t, request)

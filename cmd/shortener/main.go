@@ -2,25 +2,17 @@ package main
 
 import (
 	"log"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
-
-	"github.com/casnerano/go-url-shortener/internal/app/handler"
-	"github.com/casnerano/go-url-shortener/internal/app/repository"
-	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
-	"github.com/casnerano/go-url-shortener/internal/app/storage"
+	"github.com/casnerano/go-url-shortener/internal/app/server"
+	"github.com/casnerano/go-url-shortener/internal/app/service/cleaner"
 )
 
 func main() {
-	shortURLRepository := repository.NewShortURL(storage.NewMemory())
-	randHashService, _ := hash.NewRandom(5, 10)
-	shortener := handler.NewShortener(shortURLRepository, randHashService)
+	app := server.NewApplication()
 
-	router := chi.NewRouter()
+	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
+		go cleaner.New(app.Store).CleanOlderShortURL(ttl)
+	}
 
-	router.Get("/{shortCode}", shortener.URLGetHandler)
-	router.Post("/", shortener.URLPostHandler)
-
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(app.RunServer())
 }
