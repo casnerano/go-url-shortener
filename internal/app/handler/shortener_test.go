@@ -1,22 +1,22 @@
 package handler
 
 import (
-    "bytes"
-    "context"
-    "fmt"
-    "net/http"
-    "net/http/httptest"
-    "testing"
+	"bytes"
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
 
-    "github.com/go-chi/chi/v5"
-    "github.com/go-resty/resty/v2"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/require"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
-    "github.com/casnerano/go-url-shortener/internal/app/config"
-    "github.com/casnerano/go-url-shortener/internal/app/model"
-    "github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
-    "github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
+	"github.com/casnerano/go-url-shortener/internal/app/config"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
+	"github.com/casnerano/go-url-shortener/internal/app/service/hash"
 )
 
 func testRequest(t *testing.T, r *http.Request) (int, string) {

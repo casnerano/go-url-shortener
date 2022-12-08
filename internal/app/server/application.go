@@ -15,7 +15,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
-	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
+	"github.com/casnerano/go-url-shortener/internal/app/service/hash"
 )
 
 type Application struct {

@@ -10,7 +10,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
-	"github.com/casnerano/go-url-shortener/internal/app/service/url/hash"
+	"github.com/casnerano/go-url-shortener/internal/app/service/hash"
 )
 
 type Shortener struct {
