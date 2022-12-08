@@ -59,7 +59,7 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	fmt.Fprintf(w, s.buildAbsoluteShortURL(r, shortURLModel.Code))
+	fmt.Fprint(w, s.buildAbsoluteShortURL(r, shortURLModel.Code))
 }
 
 func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
@@ -74,18 +74,18 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	bodyObj := struct {
-		Url string `json:"url"`
+		URL string `json:"url"`
 	}{}
 	err = json.Unmarshal(body, &bodyObj)
 
 	fmt.Println(bodyObj)
 
-	if err != nil || bodyObj.Url == "" {
+	if err != nil || bodyObj.URL == "" {
 		http.Error(w, s.createErrJSON("bad request"), http.StatusBadRequest)
 		return
 	}
 
-	shortURLModel, err := s.urlService.Create(bodyObj.Url)
+	shortURLModel, err := s.urlService.Create(bodyObj.URL)
 	if err != nil {
 		http.Error(w, s.createErrJSON(err.Error()), http.StatusInternalServerError)
 		return
