@@ -15,7 +15,8 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
-	"github.com/casnerano/go-url-shortener/internal/app/service/hash"
+	"github.com/casnerano/go-url-shortener/internal/app/service"
+	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
 
 type Application struct {
@@ -84,21 +85,25 @@ func (app *Application) initRepositoryStore() {
 
 // Инициализация роутов
 func (app *Application) initRoutes() {
-	shortener := app.getShortenerHandlerGroup()
+	shortURL := app.getShortURLHandlerGroup()
 
-	app.router.Get("/{shortCode}", shortener.URLGetHandler)
-	app.router.Post("/", shortener.URLPostHandler)
+	app.router.Get("/{shortCode}", shortURL.GetOriginalURL)
+	app.router.Post("/", shortURL.PostText)
+
+	app.router.Route("/api", func(r chi.Router) {
+		r.Post("/shorten", shortURL.PostJSON)
+	})
 }
 
 // Сервис для сокращения URL
-func (app *Application) getURLHashService() (h hash.Hash) {
-	h, _ = hash.NewRandom(5, 10)
+func (app *Application) getURLHashService() (h hasher.Hash) {
+	h, _ = hasher.NewRandom(5, 10)
 	return
 }
 
 // Группа обработчиков для сокращения URL
-func (app *Application) getShortenerHandlerGroup() *handler.Shortener {
+func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
-	return handler.NewShortener(app.Config, URLRepository, hashService)
+	return handler.NewShortURL(service.NewURL(URLRepository, hashService))
 }

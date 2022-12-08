@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
-	"github.com/casnerano/go-url-shortener/internal/app/service/hash"
+	"github.com/casnerano/go-url-shortener/internal/app/service"
+	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
 
 func testRequest(t *testing.T, r *http.Request) (int, string) {
@@ -39,23 +40,23 @@ func testRequest(t *testing.T, r *http.Request) (int, string) {
 	return resp.StatusCode(), string(resp.Body())
 }
 
-func TestNewShortener(t *testing.T) {
-	conf := &config.Config{}
+func TestNewShortURL(t *testing.T) {
 	URLRepository := memstore.NewStore().URL()
-	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(conf, URLRepository, randHashService)
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+	shortener := NewShortURL(shortURLService)
 
-	assert.Equal(t, Shortener{conf, URLRepository, randHashService}, *shortener)
+	assert.Equal(t, ShortURL{shortURLService}, *shortener)
 }
 
-func TestShortener_URLGetHandler(t *testing.T) {
-	conf := &config.Config{}
+func TestShortURL_GetOriginalURL(t *testing.T) {
 	URLRepository := memstore.NewStore().URL()
-	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(conf, URLRepository, randHashService)
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+	shortURLHandlerGroup := NewShortURL(shortURLService)
 
 	router := chi.NewRouter()
-	router.Get("/{shortCode}", shortener.URLGetHandler)
+	router.Get("/{shortCode}", shortURLHandlerGroup.GetOriginalURL)
 
 	testServer := httptest.NewServer(router)
 	defer testServer.Close()
@@ -80,16 +81,16 @@ func TestShortener_URLGetHandler(t *testing.T) {
 	})
 }
 
-func TestShortener_URLPostHandler(t *testing.T) {
+func TestShortURL_PostText(t *testing.T) {
 	const regexpHTTP = "^https?://"
 
-	conf := &config.Config{}
 	URLRepository := memstore.NewStore().URL()
-	randHashService, _ := hash.NewRandom(1, 1)
-	shortener := NewShortener(conf, URLRepository, randHashService)
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+	shortURLHandlerGroup := NewShortURL(shortURLService)
 
 	router := chi.NewRouter()
-	router.Post("/", shortener.URLPostHandler)
+	router.Post("/", shortURLHandlerGroup.PostText)
 
 	testServer := httptest.NewServer(router)
 	defer testServer.Close()
@@ -101,5 +102,36 @@ func TestShortener_URLPostHandler(t *testing.T) {
 
 		require.Equal(t, http.StatusCreated, statusCode)
 		assert.Regexp(t, regexpHTTP, payload)
+	})
+}
+
+func TestShortURL_PostJSON(t *testing.T) {
+	const regexpHTTP = "^https?://"
+
+	URLRepository := memstore.NewStore().URL()
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+	shortURLHandlerGroup := NewShortURL(shortURLService)
+
+	router := chi.NewRouter()
+	router.Post("/api/shorten", shortURLHandlerGroup.PostJSON)
+
+	testServer := httptest.NewServer(router)
+	defer testServer.Close()
+
+	t.Run("post url for shorten", func(t *testing.T) {
+		body := []byte(`{"url": "http://ya.ru"}`)
+		request, _ := http.NewRequest(http.MethodPost, testServer.URL+"/api/shorten", bytes.NewBuffer(body))
+		statusCode, payload := testRequest(t, request)
+
+		require.Equal(t, http.StatusCreated, statusCode)
+
+		resultObj := struct {
+			Result string `json:"result"`
+		}{payload}
+		err := json.Unmarshal([]byte(payload), &resultObj)
+		require.NoError(t, err)
+
+		assert.Regexp(t, regexpHTTP, resultObj.Result)
 	})
 }
