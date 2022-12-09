@@ -7,8 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/caarlos0/env/v6"
 	"gopkg.in/yaml.v3"
 )
+
+const defaultENVFilename = ".env"
 
 func Unmarshal(filename string, c *Config) error {
 	ext := strings.ToLower(filepath.Ext(filename))
@@ -47,4 +50,8 @@ func UnmarshalYAML(filename string, c *Config) error {
 	}
 
 	return nil
+}
+
+func OverrideFromENV(c *Config) error {
+	return env.Parse(c)
 }

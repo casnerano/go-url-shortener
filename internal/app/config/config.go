@@ -8,14 +8,14 @@ const (
 )
 
 type Config struct {
-	ServerAddr string `json:"server_addr" yaml:"server_addr"`
+	ServerAddr string `json:"server_addr" yaml:"server_addr" env:"SERVER_ADDRESS"`
 	Storage    struct {
-		Type StorageType `json:"type" yaml:"type"`
-		DSN  string      `json:"dsn" yaml:"dsn"`
-	} `json:"storage" yaml:"storage"`
+		Type StorageType `json:"type" yaml:"type" env:"-"`
+		DSN  string      `json:"dsn" yaml:"dsn" env:"-"`
+	} `json:"storage" yaml:"storage" env:"-"`
 	ShortURL struct {
-		TTL int `yaml:"ttl"`
-	} `json:"short_url" yaml:"short_url"`
+		TTL int `yaml:"ttl" env:"-"`
+	} `json:"short_url" yaml:"short_url" env:"-"`
 }
 
 func New() *Config {
