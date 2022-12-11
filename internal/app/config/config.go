@@ -4,6 +4,7 @@ type StorageType string
 
 const (
 	StorageTypeMemory   StorageType = "memory"
+	StorageTypeFile     StorageType = "file"
 	StorageTypeDatabase StorageType = "database"
 )
 

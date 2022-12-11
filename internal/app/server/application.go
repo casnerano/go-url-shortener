@@ -13,6 +13,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
@@ -80,6 +81,12 @@ func (app *Application) initRepositoryStore() {
 			log.Fatalf("Failed to connect to the database using dsn \"%s\"", dsn)
 		}
 		app.Store = sqlstore.NewStore(pgxConn)
+	case config.StorageTypeFile:
+		store, err := filestore.NewStore()
+		if err != nil {
+			app.Store = memstore.NewStore()
+		}
+		app.Store = store
 	default:
 		app.Store = memstore.NewStore()
 	}
