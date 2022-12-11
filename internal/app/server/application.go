@@ -42,7 +42,7 @@ func (app *Application) init() {
 
 func (app *Application) Close() error {
 	if closer, ok := app.Store.(io.Closer); ok {
-		defer closer.Close()
+		return closer.Close()
 	}
 	return nil
 }
