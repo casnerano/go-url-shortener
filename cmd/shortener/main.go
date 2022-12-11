@@ -9,6 +9,7 @@ import (
 
 func main() {
 	app := server.NewApplication()
+	defer app.Close()
 
 	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
 		go cleaner.New(app.Store).CleanOlderShortURL(ttl)

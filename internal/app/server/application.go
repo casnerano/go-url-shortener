@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -37,6 +38,13 @@ func (app *Application) init() {
 	app.initRepositoryStore()
 	app.initRouter()
 	app.initRoutes()
+}
+
+func (app *Application) Close() error {
+	if closer, ok := app.Store.(io.Closer); ok {
+		defer closer.Close()
+	}
+	return nil
 }
 
 // Запуск сервера
