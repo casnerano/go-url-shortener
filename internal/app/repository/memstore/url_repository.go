@@ -12,7 +12,7 @@ type URLRepository struct {
 	store *Store
 }
 
-func (rep *URLRepository) Add(_ context.Context, url model.ShortURL) error {
+func (rep *URLRepository) Add(_ context.Context, url *model.ShortURL) error {
 	url.CreatedAt = time.Now()
 	rep.store.ShortURLStorage[url.Code] = url
 	return nil
@@ -23,7 +23,7 @@ func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.Shor
 	if !ok {
 		return nil, errors.New("url not found")
 	}
-	return &url, nil
+	return url, nil
 }
 
 func (rep *URLRepository) DeleteByCode(_ context.Context, code string) error {

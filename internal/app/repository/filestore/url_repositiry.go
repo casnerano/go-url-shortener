@@ -1,18 +1,18 @@
 package filestore
 
 import (
-	"context"
-	"time"
+    "context"
+    "time"
 
-	"github.com/casnerano/go-url-shortener/internal/app/model"
-	"github.com/casnerano/go-url-shortener/internal/app/repository"
+    "github.com/casnerano/go-url-shortener/internal/app/model"
+    "github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
 type URLRepository struct {
 	store *Store
 }
 
-func (rep *URLRepository) Add(ctx context.Context, url model.ShortURL) error {
+func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	defer rep.store.Commit(false)
 
 	err := rep.store.memStore.URL().Add(ctx, url)
@@ -20,7 +20,7 @@ func (rep *URLRepository) Add(ctx context.Context, url model.ShortURL) error {
 		return err
 	}
 
-	_ = rep.store.Write2Buffer(&url)
+	_ = rep.store.Write2Buffer(url)
 
 	return nil
 }

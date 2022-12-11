@@ -54,10 +54,29 @@ func (s *Store) Restore() error {
 			continue
 		}
 
-		s.memStore.ShortURLStorage[shortURLModel.Code] = shortURLModel
+		s.memStore.ShortURLStorage[shortURLModel.Code] = &shortURLModel
 	}
 
 	return nil
+}
+
+func (s *Store) Commit(overwrite bool) error {
+	if overwrite {
+		err := s.resetStoreFile()
+		if err != nil {
+			return err
+		}
+
+		err = s.exportMemory2Buffer()
+		if err != nil {
+			return err
+		}
+	}
+	return s.rwBuf.Flush()
+}
+
+func (s *Store) Close() error {
+	return s.file.Close()
 }
 
 func (s *Store) Write2Buffer(shortURLModel *model.ShortURL) error {
@@ -79,28 +98,9 @@ func (s *Store) Write2Buffer(shortURLModel *model.ShortURL) error {
 	return nil
 }
 
-func (s *Store) Commit(overwrite bool) error {
-	if overwrite {
-		err := s.resetStoreFile()
-		if err != nil {
-			return err
-		}
-
-		err = s.ExportMemory2Buffer()
-		if err != nil {
-			return err
-		}
-	}
-	return s.rwBuf.Flush()
-}
-
-func (s *Store) Close() error {
-	return s.file.Close()
-}
-
-func (s *Store) ExportMemory2Buffer() error {
+func (s *Store) exportMemory2Buffer() error {
 	for _, shortURL := range s.memStore.ShortURLStorage {
-		err := s.Write2Buffer(&shortURL)
+		err := s.Write2Buffer(shortURL)
 		if err != nil {
 			return nil
 		}

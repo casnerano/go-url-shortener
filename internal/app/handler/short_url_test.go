@@ -70,7 +70,7 @@ func TestShortURL_GetOriginalURL(t *testing.T) {
 	t.Run("get existing url", func(t *testing.T) {
 		shortURLOne := model.NewShortURL("short", "large")
 
-		err := URLRepository.Add(context.Background(), *shortURLOne)
+		err := URLRepository.Add(context.Background(), shortURLOne)
 		require.NoError(t, err)
 
 		requestTarget := fmt.Sprintf("%s/%s", testServer.URL, shortURLOne.Code)
