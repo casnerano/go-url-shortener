@@ -82,9 +82,9 @@ func (app *Application) initRepositoryStore() {
 		}
 		app.Store = sqlstore.NewStore(pgxConn)
 	case config.StorageTypeFile:
-		store, err := filestore.NewStore()
+		store, err := filestore.NewStore(app.Config.Storage.Path)
 		if err != nil {
-			app.Store = memstore.NewStore()
+			log.Fatalf("Failed to initialization file-storage: \"%s\"", err)
 		}
 		app.Store = store
 	default:

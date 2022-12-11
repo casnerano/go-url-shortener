@@ -11,16 +11,14 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 )
 
-const dbFileName = "./var/filestore.jsondb"
-
 type Store struct {
 	memStore *memstore.Store
 	file     *os.File
 	rwBuf    *bufio.ReadWriter
 }
 
-func NewStore() (*Store, error) {
-	file, err := os.OpenFile(dbFileName, os.O_CREATE|os.O_RDWR, 0777)
+func NewStore(fileName string) (*Store, error) {
+	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
 		return nil, err
 	}

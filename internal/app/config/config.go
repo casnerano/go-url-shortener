@@ -13,6 +13,7 @@ type Config struct {
 	Storage    struct {
 		Type StorageType `json:"type" yaml:"type" env:"-"`
 		DSN  string      `json:"dsn" yaml:"dsn" env:"-"`
+		Path string      `json:"path" yaml:"path" env:"FILE_STORAGE_PATH"`
 	} `json:"storage" yaml:"storage" env:"-"`
 	ShortURL struct {
 		TTL int `yaml:"ttl" env:"-"`
