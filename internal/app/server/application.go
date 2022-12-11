@@ -64,6 +64,10 @@ func (app *Application) initConfig() {
 	}
 
 	_ = config.OverrideFromENV(app.Config)
+
+	if app.Config.Storage.Path != "" {
+		app.Config.Storage.Type = config.StorageTypeFile
+	}
 }
 
 func (app *Application) initRouter() {
