@@ -40,7 +40,7 @@ func (app *Application) init() {
 	app.initRoutes()
 }
 
-func (app *Application) CloseResources() error {
+func (app *Application) Shutdown() error {
 	if closer, ok := app.Store.(io.Closer); ok {
 		return closer.Close()
 	}
