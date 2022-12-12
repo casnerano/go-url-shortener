@@ -49,9 +49,9 @@ func (app *Application) Shutdown() error {
 
 // Запуск сервера
 func (app *Application) RunServer() error {
-	fmt.Printf("Server started: %s\n", app.Config.ServerAddr)
+	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
-	return http.ListenAndServe(app.Config.ServerAddr, app.router)
+	return http.ListenAndServe(app.Config.Server.Addr, app.router)
 }
 
 // Путь к файлу конфигурации из параметров запуска приложения
