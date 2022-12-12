@@ -1,5 +1,11 @@
 package config
 
+import (
+	"flag"
+
+	"github.com/caarlos0/env/v6"
+)
+
 type StorageType string
 
 const (
@@ -35,4 +41,15 @@ func (c *Config) SetDefaultValues() {
 
 	c.Storage.Type = StorageTypeMemory
 	c.ShortURL.TTL = 0
+}
+
+func (c *Config) SetEnvironmentValues() error {
+	return env.Parse(c)
+}
+
+func (c *Config) SetFlagValues() error {
+	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
+	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
+	flag.StringVar(&c.Storage.Path, "f", c.Storage.Path, "File storage path")
+	return nil
 }
