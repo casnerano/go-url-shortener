@@ -126,5 +126,5 @@ func (app *Application) getURLHashService() (h hasher.Hash) {
 func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
-	return handler.NewShortURL(service.NewURL(URLRepository, hashService))
+	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
 }
