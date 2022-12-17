@@ -13,6 +13,7 @@ import (
 
     "github.com/casnerano/go-url-shortener/internal/app/config"
     "github.com/casnerano/go-url-shortener/internal/app/handler"
+    "github.com/casnerano/go-url-shortener/internal/app/middleware"
     "github.com/casnerano/go-url-shortener/internal/app/repository"
     "github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
     "github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
@@ -109,6 +110,9 @@ func (app *Application) initRepositoryStore() {
 // Инициализация роутов
 func (app *Application) initRoutes() {
     shortURL := app.getShortURLHandlerGroup()
+
+    app.router.Use(middleware.GzipCompress())
+    app.router.Use(middleware.GzipDecompress())
 
     app.router.Get("/{shortCode}", shortURL.GetOriginalURL)
     app.router.Post("/", shortURL.PostText)
