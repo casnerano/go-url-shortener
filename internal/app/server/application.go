@@ -111,7 +111,7 @@ func (app *Application) initRepositoryStore() {
 func (app *Application) initRoutes() {
     shortURL := app.getShortURLHandlerGroup()
 
-    app.router.Use(middleware.GzipCompress())
+    app.router.Use(middleware.GzipCompress(1400))
     app.router.Use(middleware.GzipDecompress())
 
     app.router.Get("/{shortCode}", shortURL.GetOriginalURL)
