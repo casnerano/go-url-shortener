@@ -11,7 +11,7 @@ type URLRepository struct {
 	store *Store
 }
 
-func (rep *URLRepository) Add(ctx context.Context, url model.ShortURL) error {
+func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	_, err := rep.store.db.Exec(
 		ctx,
 		"insert into short_url(code, original) values($1, $2)",

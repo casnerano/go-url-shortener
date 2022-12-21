@@ -10,6 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const defaultENVFilename = ".env"
+
 func Unmarshal(filename string, c *Config) error {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext = strings.TrimLeft(ext, "."); ext {
