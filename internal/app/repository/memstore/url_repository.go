@@ -9,10 +9,13 @@ import (
 )
 
 type URLRepository struct {
-	store *Store
+	store   *Store
+	counter int
 }
 
 func (rep *URLRepository) Add(_ context.Context, url *model.ShortURL) error {
+	rep.counter++
+	url.ID = rep.counter
 	url.CreatedAt = time.Now()
 	rep.store.ShortURLStorage[url.Code] = url
 	return nil

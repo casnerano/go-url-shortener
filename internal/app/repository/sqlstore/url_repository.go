@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-	"context"
-	"time"
+    "context"
+    "time"
 
-	"github.com/casnerano/go-url-shortener/internal/app/model"
+    "github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
 type URLRepository struct {
@@ -12,11 +12,14 @@ type URLRepository struct {
 }
 
 func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
-	_, err := rep.store.db.Exec(
+	err := rep.store.db.QueryRow(
 		ctx,
-		"insert into short_url(code, original) values($1, $2)",
+		"insert into short_url(code, original) values($1, $2) returning id, created_at",
 		url.Code,
 		url.Original,
+	).Scan(
+		&url.ID,
+		&url.CreatedAt,
 	)
 	return err
 }
@@ -25,9 +28,10 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 	url = &model.ShortURL{}
 	err = rep.store.db.QueryRow(
 		ctx,
-		"SELECT code, original, created_at FROM short_url WHERE code = $1",
+		"SELECT id, code, original, created_at FROM short_url WHERE code = $1",
 		code,
 	).Scan(
+		&url.ID,
 		&url.Code,
 		&url.Original,
 		&url.CreatedAt,

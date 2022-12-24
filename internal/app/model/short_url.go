@@ -3,9 +3,10 @@ package model
 import "time"
 
 type ShortURL struct {
+	ID        int       `json:"id,omitempty"`
 	Code      string    `json:"code"`
 	Original  string    `json:"original"`
-	CreatedAt time.Time `json:"createdAt"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
 }
 
 func NewShortURL(code, original string) *ShortURL {
