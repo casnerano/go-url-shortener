@@ -7,9 +7,9 @@ import (
 	"encoding/binary"
 	"math/rand"
 	"net/http"
-)
 
-type userID = uint64
+	"github.com/casnerano/go-url-shortener/internal/app/model"
+)
 
 const (
 	CookieUserIDKey  = "SEC_UID"
@@ -20,7 +20,7 @@ func Authenticate(secretEncryptKey string) func(next http.Handler) http.Handler 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			var currentUserID userID
+			var currentUserID model.UserID
 
 			if encryptUserIDCookie, err := r.Cookie(CookieUserIDKey); err == nil {
 				if uID, err := decrypt(encryptUserIDCookie.Value, secretEncryptKey); err == nil {
@@ -47,11 +47,11 @@ func Authenticate(secretEncryptKey string) func(next http.Handler) http.Handler 
 	}
 }
 
-func getRandomUserID() userID {
+func getRandomUserID() model.UserID {
 	return rand.Uint64()
 }
 
-func encrypt(uID userID, key string) (string, error) {
+func encrypt(uID model.UserID, key string) (string, error) {
 	aesblock, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return "", err
@@ -66,7 +66,7 @@ func encrypt(uID userID, key string) (string, error) {
 	return base64.StdEncoding.EncodeToString(encryptUID), nil
 }
 
-func decrypt(encryptUID string, key string) (userID, error) {
+func decrypt(encryptUID string, key string) (model.UserID, error) {
 	aesblock, err := aes.NewCipher([]byte(key))
 	if err != nil {
 		return 0, err
