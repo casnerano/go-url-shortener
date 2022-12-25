@@ -11,9 +11,11 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
+type ContextUserIDType string
+
 const (
-	CookieUserIDKey  = "SEC_UID"
-	ContextUserIDKey = "uid"
+	CookieUserIDKey                    = "SEC_UID"
+	ContextUserIDKey ContextUserIDType = "uid"
 )
 
 func Authenticate(secretEncryptKey string) func(next http.Handler) http.Handler {
