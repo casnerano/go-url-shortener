@@ -12,6 +12,7 @@ func TestNewShortURL(t *testing.T) {
 		1,
 		"short#1",
 		"large#1",
+		0,
 		time.Now(),
 	}
 
