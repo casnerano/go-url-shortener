@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
+	"github.com/casnerano/go-url-shortener/internal/app/middleware"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
+)
+
+var (
+	errBadRequest   = errors.New("bad request")
+	errUnauthorized = errors.New("unauthorized")
 )
 
 type ShortURL struct {
@@ -25,7 +33,7 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "shortCode")
 
 	if shortCode == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, errBadRequest.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -50,11 +58,18 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	urlOriginal := string(body)
 
 	if urlOriginal == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, errBadRequest.Error(), http.StatusBadRequest)
 		return
 	}
 
-	shortURLModel, err := s.urlService.Create(urlOriginal)
+	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
+	uid, ok := ctxUID.(model.UserID)
+	if !ok {
+		http.Error(w, errUnauthorized.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	shortURLModel, err := s.urlService.Create(urlOriginal, uid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -81,11 +96,18 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &bodyObj)
 
 	if err != nil || bodyObj.URL == "" {
-		http.Error(w, s.createErrJSON("bad request"), http.StatusBadRequest)
+		http.Error(w, s.createErrJSON(errBadRequest.Error()), http.StatusBadRequest)
 		return
 	}
 
-	shortURLModel, err := s.urlService.Create(bodyObj.URL)
+	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
+	uid, ok := ctxUID.(model.UserID)
+	if !ok {
+		http.Error(w, errUnauthorized.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	shortURLModel, err := s.urlService.Create(bodyObj.URL, uid)
 	if err != nil {
 		http.Error(w, s.createErrJSON(err.Error()), http.StatusInternalServerError)
 		return

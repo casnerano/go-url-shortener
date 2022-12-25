@@ -18,9 +18,10 @@ func NewURL(rep repository.URLRepository, hash hasher.Hash) *URL {
 	return &URL{rep, hash}
 }
 
-func (urlService URL) Create(urlOriginal string) (*model.ShortURL, error) {
+func (urlService URL) Create(urlOriginal string, uid model.UserID) (*model.ShortURL, error) {
 	shortCode := urlService.hash.Generate(urlOriginal)
 	shortURLModel := model.NewShortURL(shortCode, urlOriginal)
+	shortURLModel.UserID = uid
 
 	err := urlService.rep.Add(context.TODO(), shortURLModel)
 	if err != nil {
