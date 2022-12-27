@@ -104,8 +104,7 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
 	uid, ok := ctxUID.(model.UserID)
 	if !ok {
-		http.Error(w, errUnauthorized.Error(), http.StatusUnauthorized)
-		return
+		uid = 0
 	}
 
 	shortURLModel, err := s.urlService.Create(urlOriginal, uid)
@@ -142,8 +141,7 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
 	uid, ok := ctxUID.(model.UserID)
 	if !ok {
-		s.httpJSONError(w, errUnauthorized.Error(), http.StatusUnauthorized)
-		return
+		uid = 0
 	}
 
 	shortURLModel, err := s.urlService.Create(bodyObj.URL, uid)
