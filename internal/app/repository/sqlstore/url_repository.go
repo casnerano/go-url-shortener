@@ -41,7 +41,7 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 }
 
 func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
-	collection := make([]*model.ShortURL, 10)
+	collection := []*model.ShortURL{}
 
 	rows, err := rep.store.db.Query(
 		ctx,

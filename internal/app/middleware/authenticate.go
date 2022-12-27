@@ -40,7 +40,7 @@ func Authenticate(secretEncryptKey string) func(next http.Handler) http.Handler 
 					return
 				}
 
-				http.SetCookie(w, &http.Cookie{Name: CookieUserIDKey, Value: encryptUserID})
+				http.SetCookie(w, &http.Cookie{Name: CookieUserIDKey, Value: encryptUserID, Path: "/"})
 			}
 
 			ctx := context.WithValue(r.Context(), ContextUserIDKey, currentUserID)

@@ -127,6 +127,7 @@ func (app *Application) initRoutes() {
 
 	app.router.Route("/api", func(r chi.Router) {
 		r.Post("/shorten", shortURL.PostJSON)
+		r.Get("/user/urls", shortURL.GetUserURLHistory)
 	})
 }
 

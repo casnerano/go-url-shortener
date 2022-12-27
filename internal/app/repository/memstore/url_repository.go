@@ -30,7 +30,7 @@ func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.Shor
 }
 
 func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
-	collection := make([]*model.ShortURL, 10)
+	collection := []*model.ShortURL{}
 	for _, shortURL := range rep.store.ShortURLStorage {
 		if shortURL.UserID == uid {
 			collection = append(collection, shortURL)

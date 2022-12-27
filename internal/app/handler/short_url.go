@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	errBadRequest   = errors.New("bad request")
-	errUnauthorized = errors.New("unauthorized")
+	errBadRequest     = errors.New("bad request")
+	errUnauthorized   = errors.New("unauthorized")
+	errServerInternal = errors.New("server internal error")
 )
 
 type ShortURL struct {
@@ -44,6 +45,37 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, shortURL.Original, http.StatusTemporaryRedirect)
+}
+
+func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	type resultURLItem struct {
+		ShortURL    string `json:"short_url"`
+		OriginalURL string `json:"original_url"`
+	}
+
+	resultHistory := []resultURLItem{}
+
+	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
+	uid, ok := ctxUID.(model.UserID)
+	if !ok {
+		http.Error(w, s.createErrJSON(errUnauthorized.Error()), http.StatusUnauthorized)
+		return
+	}
+
+	userURLHistory, err := s.urlService.FindByUser(uid)
+	if err != nil {
+		http.Error(w, s.createErrJSON(errServerInternal.Error()), http.StatusInternalServerError)
+	}
+
+	for _, userURL := range userURLHistory {
+		item := resultURLItem{s.buildAbsoluteShortURL(userURL.Code), userURL.Original}
+		resultHistory = append(resultHistory, item)
+	}
+
+	rb, _ := json.Marshal(resultHistory)
+	fmt.Fprint(w, string(rb))
 }
 
 func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
@@ -80,10 +112,10 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-
-	w.Header().Set("Content-Type", "application/json")
 
 	if err != nil {
 		http.Error(w, s.createErrJSON(err.Error()), http.StatusInternalServerError)
