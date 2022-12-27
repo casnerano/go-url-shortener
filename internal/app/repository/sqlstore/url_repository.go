@@ -1,10 +1,10 @@
 package sqlstore
 
 import (
-    "context"
-    "time"
+	"context"
+	"time"
 
-    "github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
 type URLRepository struct {
@@ -28,15 +28,46 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 	url = &model.ShortURL{}
 	err = rep.store.db.QueryRow(
 		ctx,
-		"SELECT id, code, original, created_at FROM short_url WHERE code = $1",
+		"SELECT id, code, original, user_id, created_at FROM short_url WHERE code = $1",
 		code,
 	).Scan(
 		&url.ID,
 		&url.Code,
 		&url.Original,
+		&url.UserID,
 		&url.CreatedAt,
 	)
 	return
+}
+
+func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
+	collection := make([]*model.ShortURL, 10)
+
+	rows, err := rep.store.db.Query(
+		ctx,
+		"SELECT id, code, original, user_id, created_at FROM short_url WHERE user_id = $1",
+		uid,
+	)
+
+	if err != nil {
+		return collection, err
+	}
+
+	for rows.Next() {
+		url := &model.ShortURL{}
+		err = rows.Scan(
+			&url.ID,
+			&url.Code,
+			&url.Original,
+			&url.UserID,
+			&url.CreatedAt,
+		)
+		if err == nil {
+			collection = append(collection, url)
+		}
+	}
+
+	return collection, nil
 }
 
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {

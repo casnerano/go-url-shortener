@@ -1,11 +1,11 @@
 package filestore
 
 import (
-    "context"
-    "time"
+	"context"
+	"time"
 
-    "github.com/casnerano/go-url-shortener/internal/app/model"
-    "github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
 type URLRepository struct {
@@ -27,6 +27,10 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 
 func (rep *URLRepository) GetByCode(ctx context.Context, code string) (*model.ShortURL, error) {
 	return rep.store.memStore.URL().GetByCode(ctx, code)
+}
+
+func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
+	return rep.store.memStore.URL().FindByUser(ctx, uid)
 }
 
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {

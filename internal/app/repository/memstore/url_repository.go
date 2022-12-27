@@ -29,6 +29,16 @@ func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.Shor
 	return url, nil
 }
 
+func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
+	collection := make([]*model.ShortURL, 10)
+	for _, shortURL := range rep.store.ShortURLStorage {
+		if shortURL.UserID == uid {
+			collection = append(collection, shortURL)
+		}
+	}
+	return collection, nil
+}
+
 func (rep *URLRepository) DeleteByCode(_ context.Context, code string) error {
 	_, ok := rep.store.ShortURLStorage[code]
 	if !ok {
