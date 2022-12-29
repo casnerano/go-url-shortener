@@ -34,19 +34,19 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 		&url.ID,
 		&url.Code,
 		&url.Original,
-		&url.UserID,
+		&url.UserUUID,
 		&url.CreatedAt,
 	)
 	return
 }
 
-func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
+func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
 	collection := []*model.ShortURL{}
 
 	rows, err := rep.store.db.Query(
 		ctx,
-		"SELECT id, code, original, user_id, created_at FROM short_url WHERE user_id = $1",
-		uid,
+		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1",
+		uuid,
 	)
 
 	if err != nil {
@@ -59,7 +59,7 @@ func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*
 			&url.ID,
 			&url.Code,
 			&url.Original,
-			&url.UserID,
+			&url.UserUUID,
 			&url.CreatedAt,
 		)
 		if err == nil {

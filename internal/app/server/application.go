@@ -118,7 +118,7 @@ func (app *Application) initRepositoryStore() {
 func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 
-	app.router.Use(middleware.Authenticate("#easy_secret_key"))
+	app.router.Use(middleware.Authenticate([]byte("#easy_secret_key")))
 	app.router.Use(middleware.GzipCompress(1400))
 	app.router.Use(middleware.GzipDecompress())
 

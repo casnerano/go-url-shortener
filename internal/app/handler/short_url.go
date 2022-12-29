@@ -11,7 +11,6 @@ import (
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/middleware"
-	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 )
 
@@ -53,14 +52,15 @@ func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
 		OriginalURL string `json:"original_url"`
 	}
 
-	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
-	uid, ok := ctxUID.(model.UserID)
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+
+	uuid, ok := ctxUUID.(string)
 	if !ok {
 		s.httpJSONError(w, errUnauthorized.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	userURLHistory, err := s.urlService.FindByUser(uid)
+	userURLHistory, err := s.urlService.FindByUserUUID(uuid)
 	if err != nil {
 		s.httpJSONError(w, errServerInternal.Error(), http.StatusInternalServerError)
 		return
@@ -101,13 +101,13 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
-	uid, ok := ctxUID.(model.UserID)
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
 	if !ok {
-		uid = 0
+		uuid = ""
 	}
 
-	shortURLModel, err := s.urlService.Create(urlOriginal, uid)
+	shortURLModel, err := s.urlService.Create(urlOriginal, uuid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -138,13 +138,13 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctxUID := r.Context().Value(middleware.ContextUserIDKey)
-	uid, ok := ctxUID.(model.UserID)
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
 	if !ok {
-		uid = 0
+		uuid = ""
 	}
 
-	shortURLModel, err := s.urlService.Create(bodyObj.URL, uid)
+	shortURLModel, err := s.urlService.Create(bodyObj.URL, uuid)
 	if err != nil {
 		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
 		return

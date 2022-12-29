@@ -18,10 +18,10 @@ func NewURL(rep repository.URLRepository, hash hasher.Hash) *URL {
 	return &URL{rep, hash}
 }
 
-func (urlService *URL) Create(urlOriginal string, uid model.UserID) (*model.ShortURL, error) {
+func (urlService *URL) Create(urlOriginal string, uuid string) (*model.ShortURL, error) {
 	shortCode := urlService.hash.Generate(urlOriginal)
 	shortURLModel := model.NewShortURL(shortCode, urlOriginal)
-	shortURLModel.UserID = uid
+	shortURLModel.UserUUID = uuid
 
 	err := urlService.rep.Add(context.TODO(), shortURLModel)
 	if err != nil {
@@ -40,6 +40,6 @@ func (urlService *URL) GetByCode(shortCode string) (*model.ShortURL, error) {
 	return shortURLModel, nil
 }
 
-func (urlService *URL) FindByUser(uid model.UserID) ([]*model.ShortURL, error) {
-	return urlService.rep.FindByUser(context.TODO(), uid)
+func (urlService *URL) FindByUserUUID(uuid string) ([]*model.ShortURL, error) {
+	return urlService.rep.FindByUserUUID(context.TODO(), uuid)
 }

@@ -2,87 +2,90 @@ package middleware
 
 import (
 	"context"
-	"crypto/aes"
 	"encoding/base64"
-	"encoding/binary"
-	"math/rand"
 	"net/http"
 
+	"github.com/google/uuid"
+
 	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/pkg/crypter"
 )
 
-type ContextUserIDType string
+type ContextUserUUIDType string
 
 const (
-	CookieUserIDKey                    = "SEC_UID"
-	ContextUserIDKey ContextUserIDType = "uid"
+	CookieUserUUIDKey                      = "SEC_USER_UUID"
+	ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
 )
 
-func Authenticate(secretEncryptKey string) func(next http.Handler) http.Handler {
+func Authenticate(key []byte) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			user, err := wakeCookieUser(key, r)
 
-			var currentUserID model.UserID
-
-			if encryptUserIDCookie, err := r.Cookie(CookieUserIDKey); err == nil {
-				if uID, err := decrypt(encryptUserIDCookie.Value, secretEncryptKey); err == nil {
-					currentUserID = uID
-				}
-			}
-
-			if currentUserID == 0 {
-
-				currentUserID = getRandomUserID()
-				encryptUserID, err := encrypt(currentUserID, secretEncryptKey)
-
+			if err != nil {
+				user, err = createCookieUser(key, w)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-
-				http.SetCookie(w, &http.Cookie{Name: CookieUserIDKey, Value: encryptUserID, Path: "/"})
 			}
 
-			ctx := context.WithValue(r.Context(), ContextUserIDKey, currentUserID)
+			ctx := context.WithValue(r.Context(), ContextUserUUIDKey, user.UUID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-func getRandomUserID() model.UserID {
-	return rand.Uint64()
+func wakeCookieUser(key []byte, r *http.Request) (*model.User, error) {
+	encryptUUIDCookie, err := r.Cookie(CookieUserUUIDKey)
+	if err != nil {
+		return nil, err
+	}
+
+	stUUID, err := decrypt(encryptUUIDCookie.Value, key)
+	if err != nil {
+		return nil, err
+	}
+
+	return model.NewUser(stUUID), nil
 }
 
-func encrypt(uID model.UserID, key string) (string, error) {
-	aesblock, err := aes.NewCipher([]byte(key))
+func createCookieUser(key []byte, w http.ResponseWriter) (*model.User, error) {
+	gUUID, err := uuid.NewUUID()
+	if err != nil {
+		return nil, err
+	}
+
+	encryptUUID, err := encrypt(gUUID.String(), key)
+	if err != nil {
+		return nil, err
+	}
+
+	user := model.NewUser(gUUID.String())
+	http.SetCookie(w, &http.Cookie{Name: CookieUserUUIDKey, Value: encryptUUID, Path: "/"})
+
+	return user, nil
+}
+
+func encrypt(uuid string, key []byte) (string, error) {
+	AES256GCM := crypter.NewAES256GCM(key)
+	cipherUUID, err := AES256GCM.Encrypt([]byte(uuid))
+	return base64.StdEncoding.EncodeToString(cipherUUID), err
+}
+
+func decrypt(cipher string, key []byte) (string, error) {
+	AES256GCM := crypter.NewAES256GCM(key)
+
+	bCipher, err := base64.StdEncoding.DecodeString(cipher)
 	if err != nil {
 		return "", err
 	}
 
-	encryptUID := make([]byte, aes.BlockSize)
-	bytesUID := make([]byte, aes.BlockSize)
-
-	binary.LittleEndian.PutUint64(bytesUID, uID)
-	aesblock.Encrypt(encryptUID, bytesUID)
-
-	return base64.StdEncoding.EncodeToString(encryptUID), nil
-}
-
-func decrypt(encryptUID string, key string) (model.UserID, error) {
-	aesblock, err := aes.NewCipher([]byte(key))
+	bUUID, err := AES256GCM.Decrypt(bCipher)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	decryptUID := make([]byte, aes.BlockSize)
-
-	bEncryptUID, err := base64.StdEncoding.DecodeString(encryptUID)
-	if err != nil {
-		return 0, nil
-	}
-
-	aesblock.Decrypt(decryptUID, bEncryptUID)
-	uID := binary.LittleEndian.Uint64(decryptUID)
-
-	return uID, nil
+	return string(bUUID), err
 }

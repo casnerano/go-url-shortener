@@ -3,10 +3,10 @@ package model
 import "time"
 
 type ShortURL struct {
-	ID        int    `json:"id,omitempty"`
-	Code      string `json:"code"`
-	Original  string `json:"original"`
-	UserID    UserID
+	ID        int       `json:"id,omitempty"`
+	Code      string    `json:"code"`
+	Original  string    `json:"original"`
+	UserUUID  string    `json:"user_uuid,omitempty"`
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 }
 

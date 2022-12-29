@@ -1,4 +1,4 @@
-tests: go-test go-vet
+go-all-tests: go-test go-vet
 go-test:
 	@go test -count=1 -cover ./...
 go-vet:

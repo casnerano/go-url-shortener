@@ -29,8 +29,8 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (*model.Sh
 	return rep.store.memStore.URL().GetByCode(ctx, code)
 }
 
-func (rep *URLRepository) FindByUser(ctx context.Context, uid model.UserID) ([]*model.ShortURL, error) {
-	return rep.store.memStore.URL().FindByUser(ctx, uid)
+func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
+	return rep.store.memStore.URL().FindByUserUUID(ctx, uuid)
 }
 
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
