@@ -55,6 +55,7 @@ func TestNewShortURL(t *testing.T) {
 	shortURLService := service.NewURL(URLRepository, randHashService)
 
 	cfg := config.New()
+	cfg.SetDefaultValues()
 	shortener := NewShortURL(cfg, shortURLService)
 
 	assert.Equal(t, ShortURL{cfg, shortURLService}, *shortener)
@@ -66,6 +67,7 @@ func TestShortURL_GetOriginalURL(t *testing.T) {
 	shortURLService := service.NewURL(URLRepository, randHashService)
 
 	cfg := config.New()
+	cfg.SetDefaultValues()
 	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
 
 	router := chi.NewRouter()
@@ -100,6 +102,7 @@ func TestShortURL_GetUserURLHistory(t *testing.T) {
 	shortURLService := service.NewURL(URLRepository, randHashService)
 
 	cfg := config.New()
+	cfg.SetDefaultValues()
 	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
 
 	key := []byte("#easy_secret_key")
@@ -157,6 +160,7 @@ func TestShortURL_PostText(t *testing.T) {
 	shortURLService := service.NewURL(URLRepository, randHashService)
 
 	cfg := config.New()
+	cfg.SetDefaultValues()
 	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
 
 	router := chi.NewRouter()
@@ -183,6 +187,7 @@ func TestShortURL_PostJSON(t *testing.T) {
 	shortURLService := service.NewURL(URLRepository, randHashService)
 
 	cfg := config.New()
+	cfg.SetDefaultValues()
 	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
 
 	router := chi.NewRouter()
