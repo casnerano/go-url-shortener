@@ -12,7 +12,7 @@ type URLRepository struct {
 }
 
 func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
-	err := rep.store.db.QueryRow(
+	err := rep.store.pgxpool.QueryRow(
 		ctx,
 		"insert into short_url(code, original) values($1, $2) returning id, created_at",
 		url.Code,
@@ -26,7 +26,7 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 
 func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *model.ShortURL, err error) {
 	url = &model.ShortURL{}
-	err = rep.store.db.QueryRow(
+	err = rep.store.pgxpool.QueryRow(
 		ctx,
 		"SELECT id, code, original, user_id, created_at FROM short_url WHERE code = $1",
 		code,
@@ -43,7 +43,7 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
 	collection := []*model.ShortURL{}
 
-	rows, err := rep.store.db.Query(
+	rows, err := rep.store.pgxpool.Query(
 		ctx,
 		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1",
 		uuid,
@@ -71,7 +71,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 }
 
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
-	_, err := rep.store.db.Exec(
+	_, err := rep.store.pgxpool.Exec(
 		ctx,
 		"delete from short_url where code = $1",
 		code,
@@ -80,7 +80,7 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
 }
 
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
-	_, err := rep.store.db.Exec(
+	_, err := rep.store.pgxpool.Exec(
 		ctx,
 		"delete from short_url where created_at > $1",
 		time.Now().Add(d),

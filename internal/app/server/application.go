@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
@@ -21,10 +21,15 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
 
+var (
+	errDBConnectionEmptyDSN = errors.New("empty db connection dsn")
+)
+
 type Application struct {
-	Config *config.Config
-	Store  repository.Store
-	router *chi.Mux
+	Config  *config.Config
+	Store   repository.Store
+	router  *chi.Mux
+	pgxpool *pgxpool.Pool
 }
 
 func NewApplication() *Application {
@@ -85,16 +90,15 @@ func (app *Application) initRouter() {
 func (app *Application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
 	case config.StorageTypeDatabase:
-		dsn := app.Config.Storage.DSN
-		pgxConn, err := pgx.Connect(context.TODO(), dsn)
+		_pgxpool, err := app.getDBConnection()
 		if err != nil {
-			log.Fatalf("Failed to connect to the database using dsn \"%s\"", dsn)
+			panic(err)
 		}
-		app.Store = sqlstore.NewStore(pgxConn)
+		app.Store = sqlstore.NewStore(_pgxpool)
 	case config.StorageTypeFile:
 		store, err := filestore.NewStore(app.Config.Storage.Path)
 		if err != nil {
-			log.Fatalf("Failed to initialization file-storage: \"%s\"", err)
+			panic(err)
 		}
 		app.Store = store
 	default:
@@ -105,6 +109,7 @@ func (app *Application) initRepositoryStore() {
 // Инициализация роутов
 func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
+	database := app.getDatabaseHandlerGroup()
 
 	app.router.Use(middleware.Authenticate([]byte("#easy_secret_key")))
 	app.router.Use(middleware.GzipCompress(1400))
@@ -117,6 +122,8 @@ func (app *Application) initRoutes() {
 		r.Post("/shorten", shortURL.PostJSON)
 		r.Get("/user/urls", shortURL.GetUserURLHistory)
 	})
+
+	app.router.Get("/ping", database.PingPostreSQL)
 }
 
 // Сервис для сокращения URL
@@ -130,4 +137,34 @@ func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
+}
+
+// Группа обработчиков для работы с базой данных
+func (app *Application) getDatabaseHandlerGroup() *handler.Database {
+	_pgxpool, err := app.getDBConnection()
+	if err != nil {
+		panic(err)
+	}
+	return handler.NewDatabase(_pgxpool)
+}
+
+// Подключение к базе данных
+func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
+	if app.pgxpool != nil {
+		return app.pgxpool, nil
+	}
+
+	dsn := app.Config.Storage.DSN
+	if dsn == "" {
+		return nil, errDBConnectionEmptyDSN
+	}
+
+	var err error
+	app.pgxpool, err = pgxpool.New(context.Background(), dsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return app.pgxpool, nil
 }

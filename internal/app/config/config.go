@@ -55,6 +55,7 @@ func (c *Config) SetAppFlagValues() error {
 	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
 	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
 	flag.StringVar(&c.Storage.Path, "f", c.Storage.Path, "File storage path")
+	flag.StringVar(&c.Storage.DSN, "d", c.Storage.DSN, "Database connection DSN")
 
 	flag.Parse()
 
