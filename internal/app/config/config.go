@@ -1,8 +1,12 @@
 package config
 
 import (
+	"flag"
+
 	"github.com/caarlos0/env/v6"
 )
+
+const DefaultConfigFileName = "./configs/application.yaml"
 
 type StorageType string
 
@@ -19,7 +23,7 @@ type Config struct {
 	} `json:"server" yaml:"server" env:"-"`
 	Storage struct {
 		Type StorageType `json:"type" yaml:"type" env:"-"`
-		DSN  string      `json:"dsn" yaml:"dsn" env:"-"`
+		DSN  string      `json:"dsn" yaml:"dsn" env:"DATABASE_DSN"`
 		Path string      `json:"path" yaml:"path" env:"FILE_STORAGE_PATH"`
 	} `json:"storage" yaml:"storage" env:"-"`
 	ShortURL struct {
@@ -28,9 +32,7 @@ type Config struct {
 }
 
 func New() *Config {
-	c := Config{}
-	c.SetDefaultValues()
-	return &c
+	return &Config{}
 }
 
 func (c *Config) SetDefaultValues() {
@@ -41,6 +43,20 @@ func (c *Config) SetDefaultValues() {
 	c.ShortURL.TTL = 0
 }
 
+func (c *Config) SetConfigFileValues() error {
+	return Unmarshal(DefaultConfigFileName, c)
+}
+
 func (c *Config) SetEnvironmentValues() error {
 	return env.Parse(c)
+}
+
+func (c *Config) SetAppFlagValues() error {
+	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
+	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
+	flag.StringVar(&c.Storage.Path, "f", c.Storage.Path, "File storage path")
+
+	flag.Parse()
+
+	return nil
 }

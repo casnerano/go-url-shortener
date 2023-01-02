@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -58,30 +57,19 @@ func (app *Application) RunServer() error {
 // Инициализация конфигурации
 func (app *Application) initConfig() {
 	app.Config = config.New()
+	app.Config.SetDefaultValues()
 
-	var confName string
-	flag.StringVar(&confName, "c", "", "App configuration filename")
-
-	serverAddr := flag.String("a", app.Config.Server.Addr, "Server addr")
-	serverBaseURL := flag.String("b", app.Config.Server.BaseURL, "Base URL")
-	storagePath := flag.String("f", app.Config.Storage.Path, "File storage path")
-
-	flag.Parse()
-
-	if confName != "" {
-		// Инициализируем конфик из конфигурационного файла
-		if err := config.Unmarshal(confName, app.Config); err != nil {
-			log.Fatalf("failed to read file %s", confName)
-		}
+	if err := app.Config.SetConfigFileValues(); err != nil {
+		// todo: logging
 	}
 
-	// Переопределяем значения параметров переденных в флагах
-	app.Config.Server.Addr = *serverAddr
-	app.Config.Server.BaseURL = *serverBaseURL
-	app.Config.Storage.Path = *storagePath
+	if err := app.Config.SetEnvironmentValues(); err != nil {
+		// todo: logging
+	}
 
-	// Переопределяем значения параметров из переменныз окрудения
-	_ = app.Config.SetEnvironmentValues()
+	if err := app.Config.SetAppFlagValues(); err != nil {
+		// todo: logging
+	}
 
 	if app.Config.Storage.Path != "" {
 		app.Config.Storage.Type = config.StorageTypeFile
