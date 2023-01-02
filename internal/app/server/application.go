@@ -2,9 +2,9 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -19,10 +19,6 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
-)
-
-var (
-	errDBConnectionEmptyDSN = errors.New("empty db connection dsn")
 )
 
 type Application struct {
@@ -65,14 +61,17 @@ func (app *Application) initConfig() {
 	app.Config.SetDefaultValues()
 
 	if err := app.Config.SetConfigFileValues(); err != nil {
+		log.Fatal(err.Error())
 		// todo: logging
 	}
 
 	if err := app.Config.SetEnvironmentValues(); err != nil {
+		log.Fatal(err.Error())
 		// todo: logging
 	}
 
 	if err := app.Config.SetAppFlagValues(); err != nil {
+		log.Fatal(err.Error())
 		// todo: logging
 	}
 
@@ -155,9 +154,6 @@ func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
 	}
 
 	dsn := app.Config.Storage.DSN
-	if dsn == "" {
-		return nil, errDBConnectionEmptyDSN
-	}
 
 	var err error
 	app.pgxpool, err = pgxpool.New(context.Background(), dsn)
