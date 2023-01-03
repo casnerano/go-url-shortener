@@ -43,7 +43,10 @@ func (app *Application) init() {
 
 func (app *Application) Shutdown() error {
 	if closer, ok := app.Store.(io.Closer); ok {
-		return closer.Close()
+		_ = closer.Close()
+	}
+	if app.pgxpool != nil {
+		app.pgxpool.Close()
 	}
 	return nil
 }

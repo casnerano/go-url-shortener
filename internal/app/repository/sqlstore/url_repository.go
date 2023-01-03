@@ -53,6 +53,8 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 		return collection, err
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
 		url := &model.ShortURL{}
 		err = rows.Scan(
