@@ -13,6 +13,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/middleware"
+	"github.com/casnerano/go-url-shortener/internal/app/migration"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
@@ -36,6 +37,10 @@ func NewApplication() *Application {
 
 func (app *Application) init() {
 	app.initConfig()
+	if app.Config.Storage.Type == config.StorageTypeDatabase {
+		// todo: logging
+		_ = app.loadDBMigrations(app.Config.Storage.DSN)
+	}
 	app.initRepositoryStore()
 	app.initRouter()
 	app.initRoutes()
@@ -170,4 +175,10 @@ func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
 	}
 
 	return app.pgxpool, nil
+}
+
+// Загрузка миграций базы данных
+func (app *Application) loadDBMigrations(dbDSN string) error {
+	migrator := migration.NewMigrator(migration.MigrationDBTypePostgres, dbDSN)
+	return migrator.LoadMigrations()
 }
