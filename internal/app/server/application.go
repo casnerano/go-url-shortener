@@ -78,6 +78,10 @@ func (app *Application) initConfig() {
 		// todo: logging
 	}
 
+	if app.Config.Storage.DSN != "" {
+		app.Config.Storage.Type = config.StorageTypeDatabase
+	}
+
 	if app.Config.Storage.Path != "" {
 		app.Config.Storage.Type = config.StorageTypeFile
 	}
