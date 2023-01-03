@@ -113,7 +113,7 @@ func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 	database := app.getDatabaseHandlerGroup()
 
-	app.router.Use(middleware.Authenticate([]byte("#easy_secret_key")))
+	app.router.Use(middleware.Authenticate([]byte(app.Config.App.Secret)))
 	app.router.Use(middleware.GzipCompress(1400))
 	app.router.Use(middleware.GzipDecompress())
 
