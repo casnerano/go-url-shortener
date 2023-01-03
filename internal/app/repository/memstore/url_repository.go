@@ -29,16 +29,6 @@ func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.Shor
 	return url, nil
 }
 
-func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
-	collection := []*model.ShortURL{}
-	for _, shortURL := range rep.store.ShortURLStorage {
-		if shortURL.UserUUID == uuid {
-			collection = append(collection, shortURL)
-		}
-	}
-	return collection, nil
-}
-
 func (rep *URLRepository) DeleteByCode(_ context.Context, code string) error {
 	_, ok := rep.store.ShortURLStorage[code]
 	if !ok {

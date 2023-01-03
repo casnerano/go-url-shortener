@@ -1,17 +1,17 @@
 package sqlstore
 
 import (
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
 type Store struct {
-	pgxpool *pgxpool.Pool
+	db *pgx.Conn
 }
 
-func NewStore(pgxpool *pgxpool.Pool) *Store {
-	return &Store{pgxpool: pgxpool}
+func NewStore(db *pgx.Conn) *Store {
+	return &Store{db: db}
 }
 
 func (s *Store) URL() repository.URLRepository {
