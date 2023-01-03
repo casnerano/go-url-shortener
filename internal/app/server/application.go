@@ -2,14 +2,13 @@ package server
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
@@ -23,9 +22,10 @@ import (
 )
 
 type Application struct {
-	Config *config.Config
-	Store  repository.Store
-	router *chi.Mux
+	Config  *config.Config
+	Store   repository.Store
+	router  *chi.Mux
+	pgxpool *pgxpool.Pool
 }
 
 func NewApplication() *Application {
@@ -43,7 +43,10 @@ func (app *Application) init() {
 
 func (app *Application) Shutdown() error {
 	if closer, ok := app.Store.(io.Closer); ok {
-		return closer.Close()
+		_ = closer.Close()
+	}
+	if app.pgxpool != nil {
+		app.pgxpool.Close()
 	}
 	return nil
 }
@@ -58,30 +61,26 @@ func (app *Application) RunServer() error {
 // Инициализация конфигурации
 func (app *Application) initConfig() {
 	app.Config = config.New()
+	app.Config.SetDefaultValues()
 
-	var confName string
-	flag.StringVar(&confName, "c", "", "App configuration filename")
-
-	serverAddr := flag.String("a", app.Config.Server.Addr, "Server addr")
-	serverBaseURL := flag.String("b", app.Config.Server.BaseURL, "Base URL")
-	storagePath := flag.String("f", app.Config.Storage.Path, "File storage path")
-
-	flag.Parse()
-
-	if confName != "" {
-		// Инициализируем конфик из конфигурационного файла
-		if err := config.Unmarshal(confName, app.Config); err != nil {
-			log.Fatalf("failed to read file %s", confName)
-		}
+	if err := app.Config.SetConfigFileValues(); err != nil {
+		log.Fatal(err.Error())
+		// todo: logging
 	}
 
-	// Переопределяем значения параметров переденных в флагах
-	app.Config.Server.Addr = *serverAddr
-	app.Config.Server.BaseURL = *serverBaseURL
-	app.Config.Storage.Path = *storagePath
+	if err := app.Config.SetEnvironmentValues(); err != nil {
+		log.Fatal(err.Error())
+		// todo: logging
+	}
 
-	// Переопределяем значения параметров из переменныз окрудения
-	_ = app.Config.SetEnvironmentValues()
+	if err := app.Config.SetAppFlagValues(); err != nil {
+		log.Fatal(err.Error())
+		// todo: logging
+	}
+
+	if app.Config.Storage.DSN != "" {
+		app.Config.Storage.Type = config.StorageTypeDatabase
+	}
 
 	if app.Config.Storage.Path != "" {
 		app.Config.Storage.Type = config.StorageTypeFile
@@ -97,16 +96,15 @@ func (app *Application) initRouter() {
 func (app *Application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
 	case config.StorageTypeDatabase:
-		dsn := app.Config.Storage.DSN
-		pgxConn, err := pgx.Connect(context.TODO(), dsn)
+		_pgxpool, err := app.getDBConnection()
 		if err != nil {
-			log.Fatalf("Failed to connect to the database using dsn \"%s\"", dsn)
+			panic(err)
 		}
-		app.Store = sqlstore.NewStore(pgxConn)
+		app.Store = sqlstore.NewStore(_pgxpool)
 	case config.StorageTypeFile:
 		store, err := filestore.NewStore(app.Config.Storage.Path)
 		if err != nil {
-			log.Fatalf("Failed to initialization file-storage: \"%s\"", err)
+			panic(err)
 		}
 		app.Store = store
 	default:
@@ -117,7 +115,9 @@ func (app *Application) initRepositoryStore() {
 // Инициализация роутов
 func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
+	database := app.getDatabaseHandlerGroup()
 
+	app.router.Use(middleware.Authenticate([]byte(app.Config.App.Secret)))
 	app.router.Use(middleware.GzipCompress(1400))
 	app.router.Use(middleware.GzipDecompress())
 
@@ -126,7 +126,10 @@ func (app *Application) initRoutes() {
 
 	app.router.Route("/api", func(r chi.Router) {
 		r.Post("/shorten", shortURL.PostJSON)
+		r.Get("/user/urls", shortURL.GetUserURLHistory)
 	})
+
+	app.router.Get("/ping", database.PingPostreSQL)
 }
 
 // Сервис для сокращения URL
@@ -140,4 +143,31 @@ func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
+}
+
+// Группа обработчиков для работы с базой данных
+func (app *Application) getDatabaseHandlerGroup() *handler.Database {
+	_pgxpool, err := app.getDBConnection()
+	if err != nil {
+		panic(err)
+	}
+	return handler.NewDatabase(_pgxpool)
+}
+
+// Подключение к базе данных
+func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
+	if app.pgxpool != nil {
+		return app.pgxpool, nil
+	}
+
+	dsn := app.Config.Storage.DSN
+
+	var err error
+	app.pgxpool, err = pgxpool.New(context.Background(), dsn)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return app.pgxpool, nil
 }

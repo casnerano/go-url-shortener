@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
+	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
+)
+
+var (
+	errBadRequest     = errors.New("bad request")
+	errUnauthorized   = errors.New("unauthorized")
+	errServerInternal = errors.New("server internal error")
 )
 
 type ShortURL struct {
@@ -25,7 +33,7 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "shortCode")
 
 	if shortCode == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, errBadRequest.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -36,6 +44,45 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, shortURL.Original, http.StatusTemporaryRedirect)
+}
+
+func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
+	type resultURLItem struct {
+		ShortURL    string `json:"short_url"`
+		OriginalURL string `json:"original_url"`
+	}
+
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		s.httpJSONError(w, errUnauthorized.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userURLHistory, err := s.urlService.FindByUserUUID(uuid)
+	if err != nil {
+		s.httpJSONError(w, errServerInternal.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(userURLHistory) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	resultHistory := []resultURLItem{}
+	for _, userURL := range userURLHistory {
+		item := resultURLItem{s.buildAbsoluteShortURL(userURL.Code), userURL.Original}
+		resultHistory = append(resultHistory, item)
+	}
+
+	if err = json.NewEncoder(w).Encode(resultHistory); err != nil {
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +97,17 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	urlOriginal := string(body)
 
 	if urlOriginal == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		http.Error(w, errBadRequest.Error(), http.StatusBadRequest)
 		return
 	}
 
-	shortURLModel, err := s.urlService.Create(urlOriginal)
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		uuid = ""
+	}
+
+	shortURLModel, err := s.urlService.Create(urlOriginal, uuid)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -65,13 +118,13 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
 
-	w.Header().Set("Content-Type", "application/json")
-
 	if err != nil {
-		http.Error(w, s.createErrJSON(err.Error()), http.StatusInternalServerError)
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -81,13 +134,19 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &bodyObj)
 
 	if err != nil || bodyObj.URL == "" {
-		http.Error(w, s.createErrJSON("bad request"), http.StatusBadRequest)
+		s.httpJSONError(w, errBadRequest.Error(), http.StatusBadRequest)
 		return
 	}
 
-	shortURLModel, err := s.urlService.Create(bodyObj.URL)
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		uuid = ""
+	}
+
+	shortURLModel, err := s.urlService.Create(bodyObj.URL, uuid)
 	if err != nil {
-		http.Error(w, s.createErrJSON(err.Error()), http.StatusInternalServerError)
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -107,9 +166,9 @@ func (s *ShortURL) buildAbsoluteShortURL(shortCode string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Server.BaseURL, shortCode)
 }
 
-func (s *ShortURL) createErrJSON(err string) string {
-	result, _ := json.Marshal(struct {
+func (s *ShortURL) httpJSONError(w http.ResponseWriter, error string, code int) {
+	jsonError, _ := json.Marshal(struct {
 		Error string `json:"error"`
-	}{err})
-	return string(result)
+	}{error})
+	http.Error(w, string(jsonError), code)
 }

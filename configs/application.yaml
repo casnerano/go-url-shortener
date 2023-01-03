@@ -4,8 +4,6 @@ server:
   addr: "127.0.0.1:8080"
   base_url: "http://localhost:8080"
 storage:
-  type: database
-  dsn: "postgres://gofer:gofer@localhost:5432/shortener"
-  path: "./var/filestore.jsondb"
+  type: memory
 short_url:
-  ttl: 60
+  ttl: 360
