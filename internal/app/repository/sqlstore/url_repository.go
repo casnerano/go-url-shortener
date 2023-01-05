@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
@@ -21,6 +23,25 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 		&url.ID,
 		&url.CreatedAt,
 	)
+	return err
+}
+
+func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) error {
+	batch := &pgx.Batch{}
+
+	for _, url := range urls {
+		batch.Queue(
+			"insert into short_url(code, original) values($1, $2)",
+			url.Code,
+			url.Original,
+		)
+	}
+
+	br := rep.store.pgxpool.SendBatch(ctx, batch)
+	defer br.Close()
+
+	_, err := br.Exec()
+
 	return err
 }
 

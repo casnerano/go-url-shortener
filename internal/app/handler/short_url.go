@@ -11,6 +11,7 @@ import (
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/middleware"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 )
 
@@ -157,6 +158,47 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	}{
 		s.buildAbsoluteShortURL(shortURLModel.Code),
 	}
+
+	rb, _ := json.Marshal(response)
+	fmt.Fprint(w, string(rb))
+}
+
+func (s *ShortURL) PostBatchJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	if err != nil {
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var batchRequest []*model.ShortURLBatchRequest
+	err = json.Unmarshal(body, &batchRequest)
+
+	if err != nil {
+		s.httpJSONError(w, errBadRequest.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		uuid = ""
+	}
+
+	response, err := s.urlService.CreateBatch(batchRequest, uuid)
+	if err != nil {
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	for k := range response {
+		response[k].ShortURL = s.buildAbsoluteShortURL(response[k].ShortURL)
+	}
+
+	w.WriteHeader(http.StatusCreated)
 
 	rb, _ := json.Marshal(response)
 	fmt.Fprint(w, string(rb))

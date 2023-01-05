@@ -31,6 +31,34 @@ func (urlService *URL) Create(urlOriginal string, uuid string) (*model.ShortURL,
 	return shortURLModel, nil
 }
 
+func (urlService *URL) CreateBatch(request []*model.ShortURLBatchRequest, uuid string) ([]*model.ShortURLBatchResponse, error) {
+	response := make([]*model.ShortURLBatchResponse, 0, len(request))
+	batchShortURL := make([]*model.ShortURL, 0, len(request))
+
+	for _, requestBatchItem := range request {
+		shortCode := urlService.hash.Generate(requestBatchItem.OriginalURL)
+		shortURLModel := model.NewShortURL(shortCode, requestBatchItem.OriginalURL)
+		shortURLModel.UserUUID = uuid
+
+		batchShortURL = append(batchShortURL, shortURLModel)
+
+		response = append(
+			response,
+			&model.ShortURLBatchResponse{
+				CorrelationID: requestBatchItem.CorrelationID,
+				ShortURL:      shortURLModel.Code,
+			},
+		)
+	}
+
+	err := urlService.rep.AddBatch(context.TODO(), batchShortURL)
+	if err != nil {
+		response = response[:0]
+	}
+
+	return response, err
+}
+
 func (urlService *URL) GetByCode(shortCode string) (*model.ShortURL, error) {
 	shortURLModel, err := urlService.rep.GetByCode(context.TODO(), shortCode)
 	if err != nil {

@@ -21,6 +21,13 @@ func (rep *URLRepository) Add(_ context.Context, url *model.ShortURL) error {
 	return nil
 }
 
+func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) error {
+	for _, url := range urls {
+		_ = rep.Add(ctx, url)
+	}
+	return nil
+}
+
 func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.ShortURL, error) {
 	url, ok := rep.store.ShortURLStorage[code]
 	if !ok {

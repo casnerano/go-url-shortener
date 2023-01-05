@@ -15,12 +15,19 @@ type URLRepository struct {
 func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	defer rep.store.Commit(false)
 
-	err := rep.store.memStore.URL().Add(ctx, url)
-	if err != nil {
-		return err
-	}
-
+	_ = rep.store.memStore.URL().Add(ctx, url)
 	_ = rep.store.Write2Buffer(url)
+
+	return nil
+}
+
+func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) error {
+	defer rep.store.Commit(false)
+
+	for _, url := range urls {
+		_ = rep.store.memStore.URL().Add(ctx, url)
+		_ = rep.store.Write2Buffer(url)
+	}
 
 	return nil
 }

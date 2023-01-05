@@ -16,3 +16,13 @@ func NewShortURL(code, original string) *ShortURL {
 		Original: original,
 	}
 }
+
+type ShortURLBatchRequest struct {
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
+}
+
+type ShortURLBatchResponse struct {
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
+}
