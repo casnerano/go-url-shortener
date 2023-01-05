@@ -51,7 +51,7 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 	url = &model.ShortURL{}
 	err = rep.store.pgxpool.QueryRow(
 		ctx,
-		"SELECT id, code, original, user_id, created_at FROM short_url WHERE code = $1",
+		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE code = $1",
 		code,
 	).Scan(
 		&url.ID,
