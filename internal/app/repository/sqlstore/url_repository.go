@@ -16,9 +16,10 @@ type URLRepository struct {
 func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	err := rep.store.pgxpool.QueryRow(
 		ctx,
-		"insert into short_url(code, original) values($1, $2) returning id, created_at",
+		"insert into short_url(code, original, user_uuid) values($1, $2, $3) returning id, created_at",
 		url.Code,
 		url.Original,
+		url.UserUUID,
 	).Scan(
 		&url.ID,
 		&url.CreatedAt,
@@ -31,9 +32,10 @@ func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) 
 
 	for _, url := range urls {
 		batch.Queue(
-			"insert into short_url(code, original) values($1, $2)",
+			"insert into short_url(code, original, user_uuid) values($1, $2, $3)",
 			url.Code,
 			url.Original,
+			url.UserUUID,
 		)
 	}
 
