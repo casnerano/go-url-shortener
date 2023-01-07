@@ -2,11 +2,15 @@ package sqlstore
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
 type URLRepository struct {
@@ -24,6 +28,12 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 		&url.ID,
 		&url.CreatedAt,
 	)
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+		return repository.ErrURLExist
+	}
+
 	return err
 }
 
@@ -60,6 +70,33 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 		&url.UserUUID,
 		&url.CreatedAt,
 	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrURLNotFound
+	}
+
+	return
+}
+
+func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid string, original string) (url *model.ShortURL, err error) {
+	url = &model.ShortURL{}
+	err = rep.store.pgxpool.QueryRow(
+		ctx,
+		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1 and original = $2",
+		uuid,
+		original,
+	).Scan(
+		&url.ID,
+		&url.Code,
+		&url.Original,
+		&url.UserUUID,
+		&url.CreatedAt,
+	)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrURLNotFound
+	}
+
 	return
 }
 

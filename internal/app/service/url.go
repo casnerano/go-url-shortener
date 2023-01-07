@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
@@ -25,7 +25,7 @@ func (urlService *URL) Create(urlOriginal string, uuid string) (*model.ShortURL,
 
 	err := urlService.rep.Add(context.TODO(), shortURLModel)
 	if err != nil {
-		return nil, errors.New("url adding error")
+		return nil, fmt.Errorf("url adding error: %w", err)
 	}
 
 	return shortURLModel, nil
@@ -60,12 +60,11 @@ func (urlService *URL) CreateBatch(request []*model.ShortURLBatchRequest, uuid s
 }
 
 func (urlService *URL) GetByCode(shortCode string) (*model.ShortURL, error) {
-	shortURLModel, err := urlService.rep.GetByCode(context.TODO(), shortCode)
-	if err != nil {
-		return nil, err
-	}
+	return urlService.rep.GetByCode(context.TODO(), shortCode)
+}
 
-	return shortURLModel, nil
+func (urlService *URL) GetByUserUUIDAndOriginal(uuid string, original string) (*model.ShortURL, error) {
+	return urlService.rep.GetByUserUUIDAndOriginal(context.TODO(), uuid, original)
 }
 
 func (urlService *URL) FindByUserUUID(uuid string) ([]*model.ShortURL, error) {

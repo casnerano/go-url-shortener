@@ -12,6 +12,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 )
 
@@ -110,11 +111,17 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(urlOriginal, uuid)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		if errors.Is(err, repository.ErrURLExist) {
+			w.WriteHeader(http.StatusConflict)
+			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, urlOriginal)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusCreated)
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	fmt.Fprint(w, s.buildAbsoluteShortURL(shortURLModel.Code))
 }
 
@@ -147,11 +154,16 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(bodyObj.URL, uuid)
 	if err != nil {
-		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
-		return
+		if errors.Is(err, repository.ErrURLExist) {
+			w.WriteHeader(http.StatusConflict)
+			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, bodyObj.URL)
+		} else {
+			s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		w.WriteHeader(http.StatusCreated)
 	}
-
-	w.WriteHeader(http.StatusCreated)
 
 	response := struct {
 		Result string `json:"result"`
