@@ -75,7 +75,7 @@ func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	resultHistory := []resultURLItem{}
+	resultHistory := make([]resultURLItem, 0, len(userURLHistory))
 	for _, userURL := range userURLHistory {
 		item := resultURLItem{s.buildAbsoluteShortURL(userURL.Code), userURL.Original}
 		resultHistory = append(resultHistory, item)
