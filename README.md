@@ -18,7 +18,7 @@
 Пример запуска приложения со своими настройками:
 ```bash
 cp ./configs/application.yaml.dist ./configs/application.yaml
-go run cmd/shortener/main.go -config=./configs/application.yaml
+go run cmd/shortener/main.go -c ./configs/application.yaml
 
 ```
 

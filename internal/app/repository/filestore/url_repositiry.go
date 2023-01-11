@@ -1,11 +1,11 @@
 package filestore
 
 import (
-    "context"
-    "time"
+	"context"
+	"time"
 
-    "github.com/casnerano/go-url-shortener/internal/app/model"
-    "github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/model"
+	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
 type URLRepository struct {
@@ -21,12 +21,30 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	}
 
 	_ = rep.store.Write2Buffer(url)
+	return nil
+}
+
+func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) error {
+	defer rep.store.Commit(false)
+
+	for _, url := range urls {
+		_ = rep.store.memStore.URL().Add(ctx, url)
+		_ = rep.store.Write2Buffer(url)
+	}
 
 	return nil
 }
 
 func (rep *URLRepository) GetByCode(ctx context.Context, code string) (*model.ShortURL, error) {
 	return rep.store.memStore.URL().GetByCode(ctx, code)
+}
+
+func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid string, original string) (*model.ShortURL, error) {
+	return rep.store.memStore.URL().GetByUserUUIDAndOriginal(ctx, uuid, original)
+}
+
+func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
+	return rep.store.memStore.URL().FindByUserUUID(ctx, uuid)
 }
 
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
