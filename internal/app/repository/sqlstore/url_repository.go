@@ -115,7 +115,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 
 	rows, err := rep.store.pgxpool.Query(
 		ctx,
-		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1 and deleted is null",
+		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1 and deleted is false",
 		uuid,
 	)
 
@@ -145,7 +145,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid string) error {
 	res, _ := rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = 1 where code = $1 and user_uuid = $2",
+		"update short_url set deleted = true where code = $1 and user_uuid = $2",
 		code,
 		uuid,
 	)
@@ -160,7 +160,7 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid st
 func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
 	rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = 1 where user_uuid = $1 and code in ($2)",
+		"update short_url set deleted = true where user_uuid = $1 and code in ($2)",
 		uuid,
 		codes,
 	)
@@ -170,7 +170,7 @@ func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = 1 where created_at > $1",
+		"update short_url set deleted = true where created_at > $1",
 		time.Now().Add(d),
 	)
 	return err
