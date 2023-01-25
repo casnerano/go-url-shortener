@@ -3,12 +3,12 @@ package sqlstore
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/lib/pq"
 
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
@@ -159,16 +159,12 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid st
 }
 
 func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
-	_, err := rep.store.pgxpool.Exec(
+	rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = true where user_uuid = $1 and code in ($2)",
+		"update short_url set deleted = true where user_uuid = $1 and code = ANY($2::string[])",
 		uuid,
-		codes,
+		pq.Array(codes),
 	)
-	if err != nil {
-		fmt.Println("ШАЙТАНН!!")
-		fmt.Println(err)
-	}
 	return nil
 }
 
