@@ -41,6 +41,10 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 
 	shortURL, err := s.urlService.GetByCode(shortCode)
 	if err != nil {
+		if errors.Is(err, repository.ErrURLMarkedForDelete) {
+			http.Error(w, err.Error(), http.StatusGone)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
