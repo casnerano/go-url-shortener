@@ -162,7 +162,7 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid st
 func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = true where user_uuid = $1 and code = ANY($2::string[])",
+		"update short_url set deleted = true where user_uuid = $1 and code = any($2::text[])",
 		uuid,
 		pq.Array(codes),
 	)
