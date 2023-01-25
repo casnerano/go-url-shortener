@@ -142,13 +142,29 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 	return collection, nil
 }
 
-func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
-	_, err := rep.store.pgxpool.Exec(
+func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid string) error {
+	res, _ := rep.store.pgxpool.Exec(
 		ctx,
-		"update short_url set deleted = 1 where code = $1",
+		"update short_url set deleted = 1 where code = $1 and user_uuid = $2",
 		code,
+		uuid,
 	)
-	return err
+
+	if res.RowsAffected() > 0 {
+		return nil
+	}
+
+	return repository.ErrURLNotFound
+}
+
+func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
+	rep.store.pgxpool.Exec(
+		ctx,
+		"update short_url set deleted = 1 where user_uuid = $1 and code in ($2)",
+		uuid,
+		codes,
+	)
+	return nil
 }
 
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {

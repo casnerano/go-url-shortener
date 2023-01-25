@@ -60,7 +60,7 @@ func (rep *URLRepository) GetByUserUUIDAndOriginal(_ context.Context, uuid strin
 	return nil, repository.ErrURLNotFound
 }
 
-func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
+func (rep *URLRepository) FindByUserUUID(_ context.Context, uuid string) ([]*model.ShortURL, error) {
 	collection := []*model.ShortURL{}
 	for _, shortURL := range rep.store.ShortURLStorage {
 		if shortURL.UserUUID == uuid && !shortURL.Deleted {
@@ -70,13 +70,24 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 	return collection, nil
 }
 
-func (rep *URLRepository) DeleteByCode(_ context.Context, code string) error {
+func (rep *URLRepository) DeleteByCode(_ context.Context, code string, uuid string) error {
 	_, ok := rep.store.ShortURLStorage[code]
 	if !ok {
 		return repository.ErrURLNotFound
 	}
 
-	rep.store.ShortURLStorage[code].Deleted = true
+	if rep.store.ShortURLStorage[code].UserUUID == uuid {
+		rep.store.ShortURLStorage[code].Deleted = true
+		return nil
+	}
+
+	return repository.ErrURLNotFound
+}
+
+func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
+	for _, code := range codes {
+		rep.DeleteByCode(ctx, code, uuid)
+	}
 	return nil
 }
 

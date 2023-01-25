@@ -228,6 +228,38 @@ func (s *ShortURL) PostBatchJSON(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(rb))
 }
 
+func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	if err != nil {
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var codes []string
+	err = json.Unmarshal(body, &codes)
+
+	if err != nil {
+		s.httpJSONError(w, errBadRequest.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		uuid = ""
+	}
+
+	go func() {
+		_ = s.urlService.DeleteBatch(codes, uuid)
+	}()
+
+	w.WriteHeader(http.StatusAccepted)
+}
+
 func (s *ShortURL) buildAbsoluteShortURL(shortCode string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Server.BaseURL, shortCode)
 }

@@ -128,6 +128,7 @@ func (app *Application) initRoutes() {
 		r.Post("/shorten", shortURL.PostJSON)
 		r.Post("/shorten/batch", shortURL.PostBatchJSON)
 		r.Get("/user/urls", shortURL.GetUserURLHistory)
+		r.Delete("/user/urls", shortURL.DeleteBatchJSON)
 	})
 
 	app.router.Get("/ping", database.PingPostreSQL)
