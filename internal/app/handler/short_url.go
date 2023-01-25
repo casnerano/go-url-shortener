@@ -111,7 +111,7 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(urlOriginal, uuid)
 	if err != nil {
-		if errors.Is(err, repository.ErrURLExist) {
+		if errors.Is(err, repository.ErrURLAlreadyExist) {
 			w.WriteHeader(http.StatusConflict)
 			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, urlOriginal)
 			if err != nil {
@@ -158,7 +158,7 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(bodyObj.URL, uuid)
 	if err != nil {
-		if errors.Is(err, repository.ErrURLExist) {
+		if errors.Is(err, repository.ErrURLAlreadyExist) {
 			w.WriteHeader(http.StatusConflict)
 			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, bodyObj.URL)
 			if err != nil {

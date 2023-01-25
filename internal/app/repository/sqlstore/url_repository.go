@@ -31,7 +31,7 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
-		return repository.ErrURLExist
+		return repository.ErrURLAlreadyExist
 	}
 
 	return err
@@ -61,7 +61,7 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 	url = &model.ShortURL{}
 	err = rep.store.pgxpool.QueryRow(
 		ctx,
-		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE code = $1",
+		"SELECT id, code, original, user_uuid, created_at, deleted FROM short_url WHERE code = $1",
 		code,
 	).Scan(
 		&url.ID,
@@ -69,10 +69,15 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 		&url.Original,
 		&url.UserUUID,
 		&url.CreatedAt,
+		&url.Deleted,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrURLNotFound
+	}
+
+	if url.Deleted {
+		return nil, repository.ErrURLMarkedForDelete
 	}
 
 	return
@@ -82,7 +87,7 @@ func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid str
 	url = &model.ShortURL{}
 	err = rep.store.pgxpool.QueryRow(
 		ctx,
-		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1 and original = $2",
+		"SELECT id, code, original, user_uuid, created_at, deleted FROM short_url WHERE user_uuid = $1 and original = $2",
 		uuid,
 		original,
 	).Scan(
@@ -91,10 +96,15 @@ func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid str
 		&url.Original,
 		&url.UserUUID,
 		&url.CreatedAt,
+		&url.Deleted,
 	)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrURLNotFound
+	}
+
+	if url.Deleted {
+		return nil, repository.ErrURLMarkedForDelete
 	}
 
 	return
@@ -105,7 +115,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 
 	rows, err := rep.store.pgxpool.Query(
 		ctx,
-		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1",
+		"SELECT id, code, original, user_uuid, created_at FROM short_url WHERE user_uuid = $1 and deleted is null",
 		uuid,
 	)
 
@@ -135,7 +145,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,
-		"delete from short_url where code = $1",
+		"update short_url set deleted = 1 where code = $1",
 		code,
 	)
 	return err
@@ -144,7 +154,7 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,
-		"delete from short_url where created_at > $1",
+		"update short_url set deleted = 1 where created_at > $1",
 		time.Now().Add(d),
 	)
 	return err

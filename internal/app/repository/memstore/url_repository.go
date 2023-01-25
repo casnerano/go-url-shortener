@@ -16,7 +16,7 @@ type URLRepository struct {
 func (rep *URLRepository) Add(_ context.Context, url *model.ShortURL) error {
 	for _, shortURL := range rep.store.ShortURLStorage {
 		if shortURL.UserUUID == url.UserUUID && shortURL.Original == url.Original {
-			return repository.ErrURLExist
+			return repository.ErrURLAlreadyExist
 		}
 	}
 
@@ -40,12 +40,20 @@ func (rep *URLRepository) GetByCode(_ context.Context, code string) (*model.Shor
 	if !ok {
 		return nil, repository.ErrURLNotFound
 	}
+
+	if url.Deleted {
+		return nil, repository.ErrURLMarkedForDelete
+	}
+
 	return url, nil
 }
 
 func (rep *URLRepository) GetByUserUUIDAndOriginal(_ context.Context, uuid string, original string) (*model.ShortURL, error) {
 	for _, shortURL := range rep.store.ShortURLStorage {
 		if shortURL.UserUUID == uuid && shortURL.Original == original {
+			if shortURL.Deleted {
+				return nil, repository.ErrURLMarkedForDelete
+			}
 			return shortURL, nil
 		}
 	}
@@ -55,7 +63,7 @@ func (rep *URLRepository) GetByUserUUIDAndOriginal(_ context.Context, uuid strin
 func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
 	collection := []*model.ShortURL{}
 	for _, shortURL := range rep.store.ShortURLStorage {
-		if shortURL.UserUUID == uuid {
+		if shortURL.UserUUID == uuid && !shortURL.Deleted {
 			collection = append(collection, shortURL)
 		}
 	}
@@ -68,14 +76,14 @@ func (rep *URLRepository) DeleteByCode(_ context.Context, code string) error {
 		return repository.ErrURLNotFound
 	}
 
-	delete(rep.store.ShortURLStorage, code)
+	rep.store.ShortURLStorage[code].Deleted = true
 	return nil
 }
 
 func (rep *URLRepository) DeleteOlderRows(_ context.Context, d time.Duration) error {
 	for code, shortURL := range rep.store.ShortURLStorage {
 		if shortURL.CreatedAt.Add(d).Before(time.Now()) {
-			delete(rep.store.ShortURLStorage, code)
+			rep.store.ShortURLStorage[code].Deleted = true
 		}
 	}
 	return nil
