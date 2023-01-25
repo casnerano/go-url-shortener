@@ -254,9 +254,7 @@ func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
 	}
 
 	go func() {
-		fmt.Println("start delete part")
 		_ = s.urlService.DeleteBatch(codes, uuid)
-		fmt.Println("finish delete part")
 	}()
 
 	w.WriteHeader(http.StatusAccepted)

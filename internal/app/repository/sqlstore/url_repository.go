@@ -3,6 +3,7 @@ package sqlstore
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgerrcode"
@@ -158,12 +159,16 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid st
 }
 
 func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
-	rep.store.pgxpool.Exec(
+	_, err := rep.store.pgxpool.Exec(
 		ctx,
 		"update short_url set deleted = true where user_uuid = $1 and code in ($2)",
 		uuid,
 		codes,
 	)
+	if err != nil {
+		fmt.Println("ШАЙТАНН!!")
+		fmt.Println(err)
+	}
 	return nil
 }
 
