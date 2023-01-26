@@ -166,13 +166,7 @@ func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string
 		uuid,
 		pq.Array(codes),
 	)
-
-	if err != nil {
-		fmt.Println("ШАЙТАН!")
-		fmt.Println(err.Error())
-	}
-
-	return nil
+	return err
 }
 
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
