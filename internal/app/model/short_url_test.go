@@ -14,12 +14,14 @@ func TestNewShortURL(t *testing.T) {
 		"large#1",
 		"uuid",
 		time.Now(),
+		false,
 	}
 
 	got := NewShortURL(shortURLOne.Code, shortURLOne.Original)
 	got.ID = shortURLOne.ID
 	got.UserUUID = shortURLOne.UserUUID
 	got.CreatedAt = shortURLOne.CreatedAt
+	got.Deleted = shortURLOne.Deleted
 
 	assert.Equal(t, shortURLOne, *got)
 }

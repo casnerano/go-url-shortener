@@ -41,6 +41,10 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 
 	shortURL, err := s.urlService.GetByCode(shortCode)
 	if err != nil {
+		if errors.Is(err, repository.ErrURLMarkedForDelete) {
+			http.Error(w, err.Error(), http.StatusGone)
+			return
+		}
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -111,7 +115,7 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(urlOriginal, uuid)
 	if err != nil {
-		if errors.Is(err, repository.ErrURLExist) {
+		if errors.Is(err, repository.ErrURLAlreadyExist) {
 			w.WriteHeader(http.StatusConflict)
 			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, urlOriginal)
 			if err != nil {
@@ -158,7 +162,7 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 
 	shortURLModel, err := s.urlService.Create(bodyObj.URL, uuid)
 	if err != nil {
-		if errors.Is(err, repository.ErrURLExist) {
+		if errors.Is(err, repository.ErrURLAlreadyExist) {
 			w.WriteHeader(http.StatusConflict)
 			shortURLModel, err = s.urlService.GetByUserUUIDAndOriginal(uuid, bodyObj.URL)
 			if err != nil {
@@ -222,6 +226,38 @@ func (s *ShortURL) PostBatchJSON(w http.ResponseWriter, r *http.Request) {
 
 	rb, _ := json.Marshal(response)
 	fmt.Fprint(w, string(rb))
+}
+
+func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+
+	if err != nil {
+		s.httpJSONError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var codes []string
+	err = json.Unmarshal(body, &codes)
+
+	if err != nil {
+		s.httpJSONError(w, errBadRequest.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ctxUUID := r.Context().Value(middleware.ContextUserUUIDKey)
+	uuid, ok := ctxUUID.(string)
+	if !ok {
+		uuid = ""
+	}
+
+	go func() {
+		_ = s.urlService.DeleteBatch(codes, uuid)
+	}()
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *ShortURL) buildAbsoluteShortURL(shortCode string) string {

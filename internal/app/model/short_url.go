@@ -8,6 +8,7 @@ type ShortURL struct {
 	Original  string    `json:"original"`
 	UserUUID  string    `json:"user_uuid,omitempty"`
 	CreatedAt time.Time `json:"createdAt,omitempty"`
+	Deleted   bool      `json:"deleted,omitempty"`
 }
 
 func NewShortURL(code, original string) *ShortURL {

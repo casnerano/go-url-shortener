@@ -5,5 +5,6 @@ create table if not exists short_url (
   original varchar(255) not null,
   user_uuid varchar(64) default null,
   created_at timestamp default now(),
+  deleted boolean default false,
   unique (original, user_uuid)
 );

@@ -13,6 +13,7 @@ type URLRepository interface {
 	GetByCode(ctx context.Context, code string) (*model.ShortURL, error)
 	GetByUserUUIDAndOriginal(ctx context.Context, uuid string, original string) (*model.ShortURL, error)
 	FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error)
-	DeleteByCode(ctx context.Context, code string) error
+	DeleteByCode(ctx context.Context, code string, uuid string) error
+	DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error
 	DeleteOlderRows(ctx context.Context, age time.Duration) error
 }

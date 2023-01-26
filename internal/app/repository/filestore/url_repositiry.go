@@ -47,9 +47,14 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 	return rep.store.memStore.URL().FindByUserUUID(ctx, uuid)
 }
 
-func (rep *URLRepository) DeleteByCode(ctx context.Context, code string) error {
+func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid string) error {
 	defer rep.store.Commit(true)
-	return rep.store.memStore.URL().DeleteByCode(ctx, code)
+	return rep.store.memStore.URL().DeleteByCode(ctx, code, uuid)
+}
+
+func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
+	defer rep.store.Commit(true)
+	return rep.store.memStore.URL().DeleteBatchByCodes(ctx, codes, uuid)
 }
 
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, age time.Duration) error {

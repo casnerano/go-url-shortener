@@ -70,3 +70,7 @@ func (urlService *URL) GetByUserUUIDAndOriginal(uuid string, original string) (*
 func (urlService *URL) FindByUserUUID(uuid string) ([]*model.ShortURL, error) {
 	return urlService.rep.FindByUserUUID(context.TODO(), uuid)
 }
+
+func (urlService *URL) DeleteBatch(codes []string, uuid string) error {
+	return urlService.rep.DeleteBatchByCodes(context.TODO(), codes, uuid)
+}
