@@ -3,7 +3,6 @@ package sqlstore
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/jackc/pgerrcode"
