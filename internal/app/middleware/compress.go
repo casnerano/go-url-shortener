@@ -31,6 +31,8 @@ type gzResponseWriter struct {
 }
 
 func (gzrw *gzResponseWriter) Write(b []byte) (int, error) {
+	gzrw.WriteHeader(http.StatusOK)
+
 	size, err := gzrw.buf.Write(b)
 	gzrw.bufSize += size
 	return size, err
