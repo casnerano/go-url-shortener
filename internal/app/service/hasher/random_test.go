@@ -38,7 +38,7 @@ func TestRandom_Generate(t *testing.T) {
 		{"length 1..2", 1, 2},
 		{"length 3..5", 3, 5},
 		{"length 5..5", 5, 5},
-		{"length 5..10", 3, 10},
+		{"length 5..10", 5, 10},
 	}
 
 	for _, tt := range tests {
@@ -49,6 +49,14 @@ func TestRandom_Generate(t *testing.T) {
 			l := len(random.Generate(""))
 			assert.Equal(t, true, l >= tt.min && l <= tt.max)
 		})
+	}
+}
+
+func BenchmarkRandom_Generate(b *testing.B) {
+	random, _ := NewRandom(64, 64)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		random.Generate("")
 	}
 }
 
@@ -63,8 +71,7 @@ func TestRandom_getRandomString(t *testing.T) {
 		{"greater than the maximum", 100},
 	}
 
-	random, err := NewRandom(10, 20)
-	assert.NoError(t, err)
+	random := Random{10, 20}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
