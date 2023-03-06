@@ -136,7 +136,7 @@ func (app *Application) initRoutes() {
 
 // Сервис для сокращения URL
 func (app *Application) getURLHashService() (h hasher.Hash) {
-	h, _ = hasher.NewRandom(5, 10)
+	h = hasher.NewUnique()
 	return
 }
 
