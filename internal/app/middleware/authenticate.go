@@ -14,12 +14,11 @@ import (
 // ContextUserUUIDType for context keys.
 type ContextUserUUIDType string
 
-const (
-	// Cookie key for user uuid.
-	CookieUserUUIDKey = "SEC_USER_UUID"
-	// Context key for user uuid.
-	ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
-)
+// Cookie key for user uuid.
+const CookieUserUUIDKey = "SEC_USER_UUID"
+
+// Context key for user uuid.
+const ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
 
 // Authenticate middleware for user authentication by cookie.
 // The cookie key is the value from the `CookieUserUUIDKey` constant,

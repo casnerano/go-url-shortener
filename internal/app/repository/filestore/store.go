@@ -11,12 +11,14 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 )
 
+// Store structure for file store.
 type Store struct {
 	memStore *memstore.Store
 	file     *os.File
 	rwBuf    *bufio.ReadWriter
 }
 
+// NewStore constructor.
 func NewStore(fileName string) (*Store, error) {
 	file, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0777)
 	if err != nil {
@@ -39,6 +41,7 @@ func NewStore(fileName string) (*Store, error) {
 	return &store, nil
 }
 
+// Restore from file to memory.
 func (s *Store) Restore() error {
 	for {
 		line, err := s.rwBuf.ReadBytes('\n')
@@ -58,6 +61,7 @@ func (s *Store) Restore() error {
 	return nil
 }
 
+// Commit - flush to file.
 func (s *Store) Commit(overwrite bool) error {
 	if overwrite {
 		err := s.resetStoreFile()
@@ -73,10 +77,12 @@ func (s *Store) Commit(overwrite bool) error {
 	return s.rwBuf.Flush()
 }
 
+// Close file resource.
 func (s *Store) Close() error {
 	return s.file.Close()
 }
 
+// Write2Buffer write entity to buffer.
 func (s *Store) Write2Buffer(shortURLModel *model.ShortURL) error {
 	bShortURL, err := json.Marshal(shortURLModel)
 	if err != nil {

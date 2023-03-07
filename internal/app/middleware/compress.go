@@ -30,6 +30,7 @@ type gzResponseWriter struct {
 	statusCode int
 }
 
+// Write to buffer.
 func (gzrw *gzResponseWriter) Write(b []byte) (int, error) {
 	if gzrw.statusCode == 0 {
 		gzrw.WriteHeader(http.StatusOK)
@@ -40,10 +41,12 @@ func (gzrw *gzResponseWriter) Write(b []byte) (int, error) {
 	return size, err
 }
 
+// WriteHeader - set status code.
 func (gzrw *gzResponseWriter) WriteHeader(statusCode int) {
 	gzrw.statusCode = statusCode
 }
 
+// Header getter.
 func (gzrw *gzResponseWriter) Header() http.Header {
 	return gzrw.header
 }
