@@ -9,6 +9,7 @@ import (
 var symbols = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 var symbolsCount = len(symbols)
 
+// Struct for random hasher
 type Random struct {
 	minLen int
 	maxLen int
@@ -23,6 +24,7 @@ func NewRandom(min, max int) (Hash, error) {
 	return &Random{minLen: min, maxLen: max}, nil
 }
 
+// Generate return random string
 func (r Random) Generate(_ string) string {
 	l := rand.Intn(r.maxLen-r.minLen+1) + r.minLen
 	return r.getRandomString(l)
