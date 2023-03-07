@@ -11,10 +11,13 @@ import (
 	"github.com/casnerano/go-url-shortener/pkg/crypter"
 )
 
+// ContextUserUUIDType for context keys.
 type ContextUserUUIDType string
 
 const (
-	CookieUserUUIDKey                      = "SEC_USER_UUID"
+	// Cookie key for user uuid.
+	CookieUserUUIDKey = "SEC_USER_UUID"
+	// Context key for user uuid.
 	ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
 )
 

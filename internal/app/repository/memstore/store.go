@@ -17,6 +17,7 @@ func NewStore() *Store {
 	}
 }
 
+// URL return url repository with memory store.
 func (s *Store) URL() repository.URLRepository {
 	return &URLRepository{store: s}
 }

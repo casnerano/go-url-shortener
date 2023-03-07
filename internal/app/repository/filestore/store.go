@@ -115,6 +115,7 @@ func (s *Store) resetStoreFile() error {
 	return s.file.Truncate(0)
 }
 
+// URL return url repository with file store.
 func (s *Store) URL() repository.URLRepository {
 	return &URLRepository{store: s}
 }

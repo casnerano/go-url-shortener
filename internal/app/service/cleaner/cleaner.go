@@ -7,10 +7,12 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
+// Cleaner structure for clean processing.
 type Cleaner struct {
 	store repository.Store
 }
 
+// New - constructor.
 func New(s repository.Store) *Cleaner {
 	return &Cleaner{store: s}
 }
