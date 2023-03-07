@@ -20,6 +20,7 @@ const (
 	StorageTypeDatabase StorageType = "database"
 )
 
+// Config is a structure with contains application configurations.
 type Config struct {
 	App struct {
 		Secret string `json:"secret" yaml:"secret"`
@@ -38,6 +39,7 @@ type Config struct {
 	} `json:"short_url" yaml:"short_url" env:"-"`
 }
 
+// New configuration constructor.
 func New() *Config {
 	return &Config{}
 }

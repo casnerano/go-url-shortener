@@ -22,6 +22,7 @@ var (
 	errServerInternal = errors.New("server internal error")
 )
 
+// ShortURL structure.
 type ShortURL struct {
 	cfg        *config.Config
 	urlService *service.URL

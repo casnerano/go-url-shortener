@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 )
 
+// Unique - structure for unique hasher
 type Unique struct{}
 
-// NewUnique returns an object for generating unique links.
-// The result is a string - hash sum sha256.
+// NewUnique - constructor.
 func NewUnique() Hash {
 	return &Unique{}
 }

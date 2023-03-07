@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Database structure.
 type Database struct {
 	pgxpool *pgxpool.Pool
 }

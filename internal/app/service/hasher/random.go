@@ -9,13 +9,13 @@ import (
 var symbols = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 var symbolsCount = len(symbols)
 
-// Struct for random hasher
+// Random - structure for random hasher
 type Random struct {
 	minLen int
 	maxLen int
 }
 
-// NewRandom returns an object for generating random links, of arbitrary length.
+// NewRandom - constructor.
 // The `min` and `max` parameters define the short link length limits.
 func NewRandom(min, max int) (Hash, error) {
 	if min < 1 || max < 1 || min > max {
