@@ -29,6 +29,7 @@ func NewStore(pgxpool *pgxpool.Pool) *Store {
 	return &store
 }
 
+// Load migrations
 func (s *Store) loadMigrations() error {
 	m, err := migrate.New(MigrationSourceURL, s.pgxpool.Config().ConnString())
 	if err != nil {
