@@ -14,6 +14,8 @@ type Random struct {
 	maxLen int
 }
 
+// NewRandom returns an object for generating random links, of arbitrary length.
+// The `min` and `max` parameters define the short link length limits.
 func NewRandom(min, max int) (Hash, error) {
 	if min < 1 || max < 1 || min > max {
 		return nil, errors.New("invalid arguments")

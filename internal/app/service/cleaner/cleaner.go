@@ -15,6 +15,7 @@ func New(s repository.Store) *Cleaner {
 	return &Cleaner{store: s}
 }
 
+// CleanOlderShortURL runs a method to remove ShortURL every second.
 func (cln *Cleaner) CleanOlderShortURL(ttl int) {
 	d := time.Second * time.Duration(ttl)
 	rep := cln.store.URL()

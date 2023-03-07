@@ -1,3 +1,4 @@
+// Package with repositories for working with various repositories.
 package repository
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 )
 
+// URLRepository describes how to work with `ShortURL`.
 type URLRepository interface {
 	Add(ctx context.Context, url *model.ShortURL) error
 	AddBatch(ctx context.Context, urls []*model.ShortURL) error

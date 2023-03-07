@@ -65,6 +65,12 @@ func isAcceptGzipEncoding(r *http.Request) bool {
 	return strings.Contains(r.Header.Get("Accept-Encoding"), "gzip")
 }
 
+// GzipCompress middleware for gzip compressing the response body.
+//
+// Applies only if the following conditions are met:
+//  1. The `Accept-Encoding` request header contains the `gzip` value.
+//  2. The `Content-Type` response header contains one of the allowed values. See `defaultGzipTypes` constant.
+//  3. The size of the raw response body is greater than the value set in the `minSize` argument.
 func GzipCompress(minSize int) func(next http.Handler) http.Handler {
 	for _, t := range defaultGzipTypes {
 		defaultGzipTypesMap[t] = struct{}{}
