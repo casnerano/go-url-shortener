@@ -11,10 +11,8 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
-const (
-	// MigrationSourceURL path to migration sources.
-	MigrationSourceURL = "file://migrations/postgres"
-)
+// MigrationSourceURL path to migration sources.
+const MigrationSourceURL = "file://migrations/postgres"
 
 // Store structure for sql store.
 type Store struct {
@@ -29,7 +27,6 @@ func NewStore(pgxpool *pgxpool.Pool) *Store {
 	return &store
 }
 
-// Load migrations
 func (s *Store) loadMigrations() error {
 	m, err := migrate.New(MigrationSourceURL, s.pgxpool.Config().ConnString())
 	if err != nil {
