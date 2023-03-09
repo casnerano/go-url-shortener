@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+// GzipDecompress middleware for gzip decompressing the request body.
+// Only applies if there is a `Content-Encoding` header with a value of `gzip`.
 func GzipDecompress() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

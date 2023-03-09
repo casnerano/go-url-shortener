@@ -14,10 +14,12 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 )
 
+// URLRepository structure for url repository with sql store.
 type URLRepository struct {
 	store *Store
 }
 
+// Adding entity.
 func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	err := rep.store.pgxpool.QueryRow(
 		ctx,
@@ -38,6 +40,7 @@ func (rep *URLRepository) Add(ctx context.Context, url *model.ShortURL) error {
 	return err
 }
 
+// Batch adding entities.
 func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) error {
 	batch := &pgx.Batch{}
 
@@ -58,6 +61,7 @@ func (rep *URLRepository) AddBatch(ctx context.Context, urls []*model.ShortURL) 
 	return err
 }
 
+// Get entity by short code.
 func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *model.ShortURL, err error) {
 	url = &model.ShortURL{}
 	err = rep.store.pgxpool.QueryRow(
@@ -84,6 +88,7 @@ func (rep *URLRepository) GetByCode(ctx context.Context, code string) (url *mode
 	return
 }
 
+// Get entity by user uuid and original url.
 func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid string, original string) (url *model.ShortURL, err error) {
 	url = &model.ShortURL{}
 	err = rep.store.pgxpool.QueryRow(
@@ -111,6 +116,7 @@ func (rep *URLRepository) GetByUserUUIDAndOriginal(ctx context.Context, uuid str
 	return
 }
 
+// Find entities by user uuid.
 func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*model.ShortURL, error) {
 	collection := []*model.ShortURL{}
 
@@ -143,6 +149,7 @@ func (rep *URLRepository) FindByUserUUID(ctx context.Context, uuid string) ([]*m
 	return collection, nil
 }
 
+// Delete entity by short code.
 func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid string) error {
 	res, _ := rep.store.pgxpool.Exec(
 		ctx,
@@ -158,6 +165,7 @@ func (rep *URLRepository) DeleteByCode(ctx context.Context, code string, uuid st
 	return repository.ErrURLNotFound
 }
 
+// Batch delete entities by codes.
 func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,
@@ -168,6 +176,7 @@ func (rep *URLRepository) DeleteBatchByCodes(ctx context.Context, codes []string
 	return err
 }
 
+// Delete older entities for duration.
 func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) error {
 	_, err := rep.store.pgxpool.Exec(
 		ctx,

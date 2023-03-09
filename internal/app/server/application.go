@@ -21,6 +21,8 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
 
+// Application the structure that is responsible for all dependencies
+// and contains the methods of launching the application.
 type Application struct {
 	Config  *config.Config
 	Store   repository.Store
@@ -28,6 +30,7 @@ type Application struct {
 	pgxpool *pgxpool.Pool
 }
 
+// NewApplication - constructor.
 func NewApplication() *Application {
 	app := &Application{}
 	app.init()
@@ -41,6 +44,7 @@ func (app *Application) init() {
 	app.initRoutes()
 }
 
+// Shutdown closes all open resources.
 func (app *Application) Shutdown() error {
 	if closer, ok := app.Store.(io.Closer); ok {
 		_ = closer.Close()
@@ -51,14 +55,14 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-// Запуск сервера
+// RunServer run server.
 func (app *Application) RunServer() error {
 	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
 	return http.ListenAndServe(app.Config.Server.Addr, app.router)
 }
 
-// Инициализация конфигурации
+// Initialization configs.
 func (app *Application) initConfig() {
 	app.Config = config.New()
 	app.Config.SetDefaultValues()
@@ -91,8 +95,6 @@ func (app *Application) initRouter() {
 	app.router = chi.NewRouter()
 }
 
-// Группа репозиториев для хранилища
-// По умолчанию - хранилище в озу - memstore.Store
 func (app *Application) initRepositoryStore() {
 	switch app.Config.Storage.Type {
 	case config.StorageTypeDatabase:
@@ -112,7 +114,7 @@ func (app *Application) initRepositoryStore() {
 	}
 }
 
-// Инициализация роутов
+// Initialization routes.
 func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 	database := app.getDatabaseHandlerGroup()
@@ -134,20 +136,20 @@ func (app *Application) initRoutes() {
 	app.router.Get("/ping", database.PingPostreSQL)
 }
 
-// Сервис для сокращения URL
+// Service for url shortener.
 func (app *Application) getURLHashService() (h hasher.Hash) {
-	h, _ = hasher.NewRandom(5, 10)
+	h = hasher.NewUnique()
 	return
 }
 
-// Группа обработчиков для сокращения URL
+// Handler group for url shortener.
 func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
 	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
 }
 
-// Группа обработчиков для работы с базой данных
+// Handler group for database.
 func (app *Application) getDatabaseHandlerGroup() *handler.Database {
 	_pgxpool, err := app.getDBConnection()
 	if err != nil {
@@ -156,7 +158,7 @@ func (app *Application) getDatabaseHandlerGroup() *handler.Database {
 	return handler.NewDatabase(_pgxpool)
 }
 
-// Подключение к базе данных
+// Database connection.
 func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
 	if app.pgxpool != nil {
 		return app.pgxpool, nil

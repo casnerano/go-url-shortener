@@ -11,13 +11,20 @@ import (
 	"github.com/casnerano/go-url-shortener/pkg/crypter"
 )
 
+// ContextUserUUIDType for context keys.
 type ContextUserUUIDType string
 
-const (
-	CookieUserUUIDKey                      = "SEC_USER_UUID"
-	ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
-)
+// Cookie key for user uuid.
+const CookieUserUUIDKey = "SEC_USER_UUID"
 
+// Context key for user uuid.
+const ContextUserUUIDKey ContextUserUUIDType = "user_uuid"
+
+// Authenticate middleware for user authentication by cookie.
+// The cookie key is the value from the `CookieUserUUIDKey` constant,
+// which specifies the user's UUID.
+//
+// Values in cookies are stored in encrypted form.
 func Authenticate(key []byte) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

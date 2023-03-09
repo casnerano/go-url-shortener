@@ -12,6 +12,7 @@ import (
 
 const defaultENVFilename = ".env"
 
+// Unmarshal configuration file.
 func Unmarshal(filename string, c *Config) error {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext = strings.TrimLeft(ext, "."); ext {
@@ -23,6 +24,7 @@ func Unmarshal(filename string, c *Config) error {
 	return errors.New("unknown config file extension")
 }
 
+// Unmarshal JSON configuration file.
 func UnmarshalJSON(filename string, c *Config) error {
 	file, err := os.ReadFile(filename)
 	if err != nil {
@@ -37,6 +39,7 @@ func UnmarshalJSON(filename string, c *Config) error {
 	return nil
 }
 
+// Unmarshal YAML configuration file.
 func UnmarshalYAML(filename string, c *Config) error {
 	file, err := os.ReadFile(filename)
 	if err != nil {

@@ -22,15 +22,19 @@ var (
 	errServerInternal = errors.New("server internal error")
 )
 
+// ShortURL structure.
 type ShortURL struct {
 	cfg        *config.Config
 	urlService *service.URL
 }
 
+// NewShortURL returns a structure containing
+// a group of handlers for working with `ShortURL`.
 func NewShortURL(cfg *config.Config, urlService *service.URL) *ShortURL {
 	return &ShortURL{cfg, urlService}
 }
 
+// GetOriginalURL the handler returns the original short url.
 func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	shortCode := chi.URLParam(r, "shortCode")
 
@@ -52,6 +56,7 @@ func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, shortURL.Original, http.StatusTemporaryRedirect)
 }
 
+// GetUserURLHistory the handler returns the history for current user.
 func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
 	type resultURLItem struct {
 		ShortURL    string `json:"short_url"`
@@ -91,6 +96,7 @@ func (s *ShortURL) GetUserURLHistory(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// PostText the handler creates a short link.
 func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
@@ -133,6 +139,7 @@ func (s *ShortURL) PostText(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, s.buildAbsoluteShortURL(shortURLModel.Code))
 }
 
+// PostJSON the handler creates a short link, used json format.
 func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -187,6 +194,7 @@ func (s *ShortURL) PostJSON(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(rb))
 }
 
+// PostBatchJSON the handler batch creates a short links, used json format.
 func (s *ShortURL) PostBatchJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -228,6 +236,7 @@ func (s *ShortURL) PostBatchJSON(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, string(rb))
 }
 
+// DeleteBatchJSON the handler batch delete a short links, used json format.
 func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 

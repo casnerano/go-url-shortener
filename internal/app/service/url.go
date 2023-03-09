@@ -9,15 +9,18 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
 
+// URL - structure for url manipulation service
 type URL struct {
 	rep  repository.URLRepository
 	hash hasher.Hash
 }
 
+// NewURL - constructor.
 func NewURL(rep repository.URLRepository, hash hasher.Hash) *URL {
 	return &URL{rep, hash}
 }
 
+// Create entity for user.
 func (urlService *URL) Create(urlOriginal string, uuid string) (*model.ShortURL, error) {
 	shortCode := urlService.hash.Generate(urlOriginal)
 	shortURLModel := model.NewShortURL(shortCode, urlOriginal)
@@ -31,6 +34,7 @@ func (urlService *URL) Create(urlOriginal string, uuid string) (*model.ShortURL,
 	return shortURLModel, nil
 }
 
+// CreateBatch entities for user.
 func (urlService *URL) CreateBatch(request []*model.ShortURLBatchRequest, uuid string) ([]*model.ShortURLBatchResponse, error) {
 	response := make([]*model.ShortURLBatchResponse, 0, len(request))
 	batchShortURL := make([]*model.ShortURL, 0, len(request))
@@ -59,18 +63,22 @@ func (urlService *URL) CreateBatch(request []*model.ShortURLBatchRequest, uuid s
 	return response, err
 }
 
+// GetByCode return entity by short code.
 func (urlService *URL) GetByCode(shortCode string) (*model.ShortURL, error) {
 	return urlService.rep.GetByCode(context.TODO(), shortCode)
 }
 
+// GetByUserUUIDAndOriginal return entity by user uuid and original url.
 func (urlService *URL) GetByUserUUIDAndOriginal(uuid string, original string) (*model.ShortURL, error) {
 	return urlService.rep.GetByUserUUIDAndOriginal(context.TODO(), uuid, original)
 }
 
+// FindByUserUUID return entity by user uuid and original url.
 func (urlService *URL) FindByUserUUID(uuid string) ([]*model.ShortURL, error) {
 	return urlService.rep.FindByUserUUID(context.TODO(), uuid)
 }
 
+// Batch delete entities by codes.
 func (urlService *URL) DeleteBatch(codes []string, uuid string) error {
 	return urlService.rep.DeleteBatchByCodes(context.TODO(), codes, uuid)
 }

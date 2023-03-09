@@ -1,3 +1,4 @@
+// Package for application configuration
 package config
 
 import (
@@ -6,16 +7,20 @@ import (
 	"github.com/caarlos0/env/v6"
 )
 
+// DefaultConfigFileName - default configuration file path.
 const DefaultConfigFileName = "./configs/application.yaml"
 
+// StorageType defines the type of storage
 type StorageType string
 
+// List of storage types.
 const (
 	StorageTypeMemory   StorageType = "memory"
 	StorageTypeFile     StorageType = "file"
 	StorageTypeDatabase StorageType = "database"
 )
 
+// Config is a structure with contains application configurations.
 type Config struct {
 	App struct {
 		Secret string `json:"secret" yaml:"secret"`
@@ -34,10 +39,12 @@ type Config struct {
 	} `json:"short_url" yaml:"short_url" env:"-"`
 }
 
+// New configuration constructor.
 func New() *Config {
 	return &Config{}
 }
 
+// SetDefaultValues sets default values.
 func (c *Config) SetDefaultValues() {
 	c.App.Secret = "cfcd208495d565ef66e7dff9f98764da"
 
@@ -48,14 +55,17 @@ func (c *Config) SetDefaultValues() {
 	c.ShortURL.TTL = 0
 }
 
+// SetConfigFileValues sets values from file.
 func (c *Config) SetConfigFileValues() error {
 	return Unmarshal(DefaultConfigFileName, c)
 }
 
+// SetEnvironmentValues sets values from environment variables.
 func (c *Config) SetEnvironmentValues() error {
 	return env.Parse(c)
 }
 
+// SetAppFlagValues sets values from application flags.
 func (c *Config) SetAppFlagValues() error {
 	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
 	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")

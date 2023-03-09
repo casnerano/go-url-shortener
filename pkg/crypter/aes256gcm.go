@@ -1,3 +1,4 @@
+// Package for encrypt and decrypt bytes through AES256-GCM algorith.
 package crypter
 
 import (
@@ -8,15 +9,18 @@ import (
 	"io"
 )
 
+// AES256GCM structure for encrypt and decrypt.
 type AES256GCM struct {
 	key []byte
 }
 
+// NewAES256GCM constructor.
 func NewAES256GCM(key []byte) *AES256GCM {
 	hKey := sha256.Sum256(key)
 	return &AES256GCM{key: hKey[:]}
 }
 
+// Encrypt bytes.
 func (aes256gcm *AES256GCM) Encrypt(src []byte) ([]byte, error) {
 	aesblock, err := aes.NewCipher(aes256gcm.key)
 	if err != nil {
@@ -36,6 +40,7 @@ func (aes256gcm *AES256GCM) Encrypt(src []byte) ([]byte, error) {
 	return aesgcm.Seal(nonce, nonce, src, nil), nil
 }
 
+// Decrypt bytes.
 func (aes256gcm *AES256GCM) Decrypt(dst []byte) ([]byte, error) {
 	aesblock, err := aes.NewCipher(aes256gcm.key)
 	if err != nil {

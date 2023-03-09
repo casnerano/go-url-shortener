@@ -9,12 +9,23 @@ import (
 var symbols = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 var symbolsCount = len(symbols)
 
+// Random - structure for random hasher
 type Random struct {
 	minLen int
 	maxLen int
 }
 
-func (r Random) Generate(string) string {
+// NewRandom - constructor.
+// The `min` and `max` parameters define the short link length limits.
+func NewRandom(min, max int) (Hash, error) {
+	if min < 1 || max < 1 || min > max {
+		return nil, errors.New("invalid arguments")
+	}
+	return &Random{minLen: min, maxLen: max}, nil
+}
+
+// Generate return random string
+func (r Random) Generate(_ string) string {
 	l := rand.Intn(r.maxLen-r.minLen+1) + r.minLen
 	return r.getRandomString(l)
 }
@@ -25,13 +36,6 @@ func (r Random) getRandomString(n int) string {
 		st[i] = symbols[rand.Intn(symbolsCount)]
 	}
 	return string(st)
-}
-
-func NewRandom(min, max int) (*Random, error) {
-	if min < 1 || max < 1 || min > max {
-		return nil, errors.New("invalid arguments")
-	}
-	return &Random{minLen: min, maxLen: max}, nil
 }
 
 func init() {
