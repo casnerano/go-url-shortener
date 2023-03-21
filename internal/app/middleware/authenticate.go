@@ -76,13 +76,13 @@ func createCookieUser(key []byte, w http.ResponseWriter) (*model.User, error) {
 }
 
 func encrypt(uuid string, key []byte) (string, error) {
-	AES256GCM := crypter.NewAES256GCM(key)
+	AES256GCM := crypter.NewCipher(key)
 	cipherUUID, err := AES256GCM.Encrypt([]byte(uuid))
 	return base64.StdEncoding.EncodeToString(cipherUUID), err
 }
 
 func decrypt(cipher string, key []byte) (string, error) {
-	AES256GCM := crypter.NewAES256GCM(key)
+	AES256GCM := crypter.NewCipher(key)
 
 	bCipher, err := base64.StdEncoding.DecodeString(cipher)
 	if err != nil {

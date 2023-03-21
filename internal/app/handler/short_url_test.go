@@ -123,7 +123,7 @@ func TestShortURL_GetUserURLHistory(t *testing.T) {
 	err = URLRepository.Add(context.Background(), shortURLTwo)
 	require.NoError(t, err)
 
-	AES256GCM := crypter.NewAES256GCM(key)
+	AES256GCM := crypter.NewCipher(key)
 
 	t.Run("get user positive url history", func(t *testing.T) {
 		cipherUUID, _ := AES256GCM.Encrypt([]byte("test_uuid"))
@@ -210,5 +210,32 @@ func TestShortURL_PostJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Regexp(t, regexpHTTP, resultObj.Result)
+	})
+}
+
+func TestShortURL_PostBatchJSON(t *testing.T) {
+	URLRepository := memstore.NewStore().URL()
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+
+	cfg := config.New()
+	cfg.SetDefaultValues()
+	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
+
+	router := chi.NewRouter()
+	router.Post("/api/shorten/batch", shortURLHandlerGroup.PostBatchJSON)
+
+	testServer := httptest.NewServer(router)
+	defer testServer.Close()
+
+	t.Run("post batch url for shorten", func(t *testing.T) {
+		body := []byte(`
+			[{"correlation_id": "1","original_url": "https://ya.ru/1"},
+			{"correlation_id": "2","original_url": "https://ya.ru/2"}]
+		`)
+		request, _ := http.NewRequest(http.MethodPost, testServer.URL+"/api/shorten/batch", bytes.NewBuffer(body))
+		statusCode, _ := testRequest(t, request)
+
+		require.Equal(t, http.StatusCreated, statusCode)
 	})
 }

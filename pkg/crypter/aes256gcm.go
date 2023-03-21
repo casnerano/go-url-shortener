@@ -14,8 +14,8 @@ type AES256GCM struct {
 	key []byte
 }
 
-// NewAES256GCM constructor.
-func NewAES256GCM(key []byte) *AES256GCM {
+// NewCipher constructor.
+func NewCipher(key []byte) *AES256GCM {
 	hKey := sha256.Sum256(key)
 	return &AES256GCM{key: hKey[:]}
 }
