@@ -283,3 +283,12 @@ func TestShortURL_DeleteBatchJSON(t *testing.T) {
 		require.Equal(t, http.StatusAccepted, statusCode)
 	})
 }
+
+func TestShortURL_httpJSONError(t *testing.T) {
+	t.Run("http json error", func(t *testing.T) {
+		s := &ShortURL{}
+		resp := &httptest.ResponseRecorder{}
+		s.httpJSONError(resp, http.StatusText(http.StatusTeapot), http.StatusTeapot)
+		assert.Equal(t, http.StatusTeapot, resp.Code)
+	})
+}
