@@ -239,3 +239,47 @@ func TestShortURL_PostBatchJSON(t *testing.T) {
 		require.Equal(t, http.StatusCreated, statusCode)
 	})
 }
+
+func TestShortURL_DeleteBatchJSON(t *testing.T) {
+	URLRepository := memstore.NewStore().URL()
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+
+	cfg := config.New()
+	cfg.SetDefaultValues()
+	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
+
+	key := []byte("#easy_secret_key")
+
+	router := chi.NewRouter()
+	router.Use(middleware.Authenticate(key))
+	router.Delete("/api/user/urls", shortURLHandlerGroup.DeleteBatchJSON)
+
+	testServer := httptest.NewServer(router)
+	defer testServer.Close()
+
+	shortURLOne := &model.ShortURL{Code: "short1", Original: "large1", UserUUID: "test_uuid"}
+	shortURLTwo := &model.ShortURL{Code: "short2", Original: "large2", UserUUID: "test_uuid"}
+
+	err := URLRepository.Add(context.Background(), shortURLOne)
+	require.NoError(t, err)
+
+	err = URLRepository.Add(context.Background(), shortURLTwo)
+	require.NoError(t, err)
+
+	AES256GCM := crypter.NewCipher(key)
+
+	cipherUUID, _ := AES256GCM.Encrypt([]byte("test_uuid"))
+	encryptUUID := base64.StdEncoding.EncodeToString(cipherUUID)
+
+	cookie := http.Cookie{Name: middleware.CookieUserUUIDKey, Value: encryptUUID, Path: "/"}
+
+	body := []byte(`["short1", "short2"]`)
+	request, _ := http.NewRequest(http.MethodDelete, testServer.URL+"/api/user/urls", bytes.NewBuffer(body))
+	request.AddCookie(&cookie)
+
+	t.Run("delete batch urls for shorten", func(t *testing.T) {
+		statusCode, _ := testRequest(t, request)
+		require.Equal(t, http.StatusAccepted, statusCode)
+	})
+}
