@@ -82,6 +82,18 @@ func TestShortURL_GetOriginalURL(t *testing.T) {
 		require.Equal(t, http.StatusNotFound, statusCode)
 	})
 
+	t.Run("get marked for delete url", func(t *testing.T) {
+		shortURLOne := model.NewShortURL("short-for-delete", "large-for-delete")
+		shortURLOne.Deleted = true
+
+		err := URLRepository.Add(context.Background(), shortURLOne)
+		require.NoError(t, err)
+
+		request, _ := http.NewRequest(http.MethodGet, testServer.URL+"/short-for-delete", nil)
+		statusCode, _ := testRequest(t, request)
+		require.Equal(t, http.StatusGone, statusCode)
+	})
+
 	t.Run("get existing url", func(t *testing.T) {
 		shortURLOne := model.NewShortURL("short", "large")
 
