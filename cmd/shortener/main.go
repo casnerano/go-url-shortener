@@ -11,8 +11,8 @@ import (
 // These variables are configured using ldflags.
 //
 // For example:
-//  go run -ldflags "-X main.Version=v1.0.1 \
-//  -X 'main.buildVersion=1.0.0'" ./cmd/shortener/main.go
+// go run -ldflags "-X main.Version=v1.0.1 \
+// -X 'main.buildVersion=1.0.0'" ./cmd/shortener/main.go
 var (
 	buildVersion string = "N/A"
 	buildDate    string = "N/A"
