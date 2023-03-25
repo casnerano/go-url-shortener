@@ -7,22 +7,11 @@ import (
 )
 
 func TestUnique_Generate(t *testing.T) {
-	type args struct {
-		url string
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			u := Unique{}
-			assert.Equalf(t, tt.want, u.Generate(tt.args.url), "Generate(%v)", tt.args.url)
-		})
-	}
+	t.Run("generate unique string length", func(t *testing.T) {
+		u := NewUnique()
+		uniqStr := u.Generate("example")
+		assert.Equalf(t, 64, len(uniqStr), "Generate(%v)", uniqStr)
+	})
 }
 
 func BenchmarkUnique_Generate(b *testing.B) {
