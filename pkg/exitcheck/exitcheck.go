@@ -17,13 +17,19 @@ var Analyzer = &analysis.Analyzer{
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
-	expr := func(x *ast.CallExpr) {
-		if s, ok := x.Fun.(*ast.SelectorExpr); ok {
-			if ident, identOk := s.X.(*ast.Ident); identOk {
-				if ident.Name == "os" && s.Sel.Name == "Exit" {
-					pass.Reportf(ident.NamePos, "direct call to os.Exit in main package main function")
-				}
-			}
+	exitDetectInCallExpr := func(x *ast.CallExpr) {
+		s, ok := x.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return
+		}
+
+		ident, ok := s.X.(*ast.Ident)
+		if !ok {
+			return
+		}
+
+		if ident.Name == "os" && s.Sel.Name == "Exit" {
+			pass.Reportf(ident.NamePos, "direct call to os.Exit in main package main function")
 		}
 	}
 
@@ -37,7 +43,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 			if fnDecl, ok := decl.(*ast.FuncDecl); ok && fnDecl.Name.Name == "main" {
 				ast.Inspect(fnDecl.Body, func(node ast.Node) bool {
 					if callExpr, callExprOk := node.(*ast.CallExpr); callExprOk {
-						expr(callExpr)
+						exitDetectInCallExpr(callExpr)
 					}
 					return true
 				})
