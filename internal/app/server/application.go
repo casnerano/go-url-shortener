@@ -72,10 +72,12 @@ func (app *Application) RunServer() error {
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
 		}
+
 		srv.TLSConfig = autoCertManager.TLSConfig()
+		return srv.ListenAndServeTLS("", "")
 	}
 
-	return srv.ListenAndServeTLS("", "")
+	return srv.ListenAndServe()
 }
 
 // Initialization configs.
