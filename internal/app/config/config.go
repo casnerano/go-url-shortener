@@ -26,8 +26,9 @@ type Config struct {
 		Secret string `json:"secret" yaml:"secret"`
 	} `json:"app" yaml:"app"`
 	Server struct {
-		Addr    string `json:"addr" yaml:"addr" env:"SERVER_ADDRESS"`
-		BaseURL string `json:"base_url" yaml:"base_url" env:"BASE_URL"`
+		EnableHTTPS bool   `json:"enable_https" yaml:"enable_https" env:"ENABLE_HTTPS"`
+		Addr        string `json:"addr" yaml:"addr" env:"SERVER_ADDRESS"`
+		BaseURL     string `json:"base_url" yaml:"base_url" env:"BASE_URL"`
 	} `json:"server" yaml:"server" env:"-"`
 	Storage struct {
 		Type StorageType `json:"type" yaml:"type" env:"-"`
@@ -68,6 +69,7 @@ func (c *Config) SetEnvironmentValues() error {
 // SetAppFlagValues sets values from application flags.
 func (c *Config) SetAppFlagValues() error {
 	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
+	flag.BoolVar(&c.Server.EnableHTTPS, "s", c.Server.EnableHTTPS, "Enable HTTPS")
 	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
 	flag.StringVar(&c.Storage.Path, "f", c.Storage.Path, "File storage path")
 	flag.StringVar(&c.Storage.DSN, "d", c.Storage.DSN, "Database connection DSN")

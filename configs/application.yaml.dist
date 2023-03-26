@@ -1,6 +1,7 @@
 app:
   secret: cfcd208495d565ef66e7dff9f98764da
 server:
+  enable_https: true
   addr: "127.0.0.1:8080"
   base_url: "http://localhost:8080"
 storage:

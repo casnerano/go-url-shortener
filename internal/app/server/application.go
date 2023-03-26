@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
@@ -59,7 +60,22 @@ func (app *Application) Shutdown() error {
 func (app *Application) RunServer() error {
 	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
-	return http.ListenAndServe(app.Config.Server.Addr, app.router)
+
+	srv := &http.Server{
+		Addr:    app.Config.Server.Addr,
+		Handler: app.router,
+	}
+
+	if app.Config.Server.EnableHTTPS {
+		autoCertManager := &autocert.Manager{
+			Cache:      autocert.DirCache("./var"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
+		}
+		srv.TLSConfig = autoCertManager.TLSConfig()
+	}
+
+	return srv.ListenAndServeTLS("", "")
 }
 
 // Initialization configs.
