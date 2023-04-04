@@ -2,7 +2,7 @@
 package config
 
 import (
-	"flag"
+	"log"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -45,6 +45,38 @@ func New() *Config {
 	return &Config{}
 }
 
+// Init from other
+func (c *Config) Init() {
+	c.SetDefaultValues()
+
+	flags := parseFlags(c)
+
+	filename := DefaultConfigFileName
+	if flags.ConfigName != "" {
+		filename = flags.ConfigName
+	}
+
+	if err := c.setConfigFileValues(filename); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	if err := c.setAppFlagValues(flags); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	if err := c.setEnvironmentValues(); err != nil {
+		log.Fatal(err.Error())
+	}
+
+	if c.Storage.DSN != "" {
+		c.Storage.Type = StorageTypeDatabase
+	}
+
+	if c.Storage.Path != "" {
+		c.Storage.Type = StorageTypeFile
+	}
+}
+
 // SetDefaultValues sets default values.
 func (c *Config) SetDefaultValues() {
 	c.App.Secret = "cfcd208495d565ef66e7dff9f98764da"
@@ -56,25 +88,23 @@ func (c *Config) SetDefaultValues() {
 	c.ShortURL.TTL = 0
 }
 
-// SetConfigFileValues sets values from file.
-func (c *Config) SetConfigFileValues() error {
-	return Unmarshal(DefaultConfigFileName, c)
+// setConfigFileValues sets values from file.
+func (c *Config) setConfigFileValues(filename string) error {
+	return unmarshal(filename, c)
 }
 
-// SetEnvironmentValues sets values from environment variables.
-func (c *Config) SetEnvironmentValues() error {
+// setEnvironmentValues sets values from environment variables.
+func (c *Config) setEnvironmentValues() error {
 	return env.Parse(c)
 }
 
-// SetAppFlagValues sets values from application flags.
-func (c *Config) SetAppFlagValues() error {
-	flag.StringVar(&c.Server.Addr, "a", c.Server.Addr, "Server addr")
-	flag.BoolVar(&c.Server.EnableHTTPS, "s", c.Server.EnableHTTPS, "Enable HTTPS")
-	flag.StringVar(&c.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
-	flag.StringVar(&c.Storage.Path, "f", c.Storage.Path, "File storage path")
-	flag.StringVar(&c.Storage.DSN, "d", c.Storage.DSN, "Database connection DSN")
-
-	flag.Parse()
+// setAppFlagValues sets values from flags.
+func (c *Config) setAppFlagValues(flags *Flags) error {
+	c.Server.Addr = flags.Server.Addr
+	c.Server.EnableHTTPS = flags.Server.EnableHTTPS
+	c.Server.BaseURL = flags.Server.BaseURL
+	c.Storage.Path = flags.Storage.Path
+	c.Storage.DSN = flags.Storage.DSN
 
 	return nil
 }

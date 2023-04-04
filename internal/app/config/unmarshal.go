@@ -12,20 +12,20 @@ import (
 
 const defaultENVFilename = ".env"
 
-// Unmarshal configuration file.
-func Unmarshal(filename string, c *Config) error {
+// unmarshal configuration file.
+func unmarshal(filename string, c *Config) error {
 	ext := strings.ToLower(filepath.Ext(filename))
 	switch ext = strings.TrimLeft(ext, "."); ext {
 	case "yaml", "yml":
-		return UnmarshalYAML(filename, c)
+		return unmarshalYAML(filename, c)
 	case "json":
-		return UnmarshalJSON(filename, c)
+		return unmarshalJSON(filename, c)
 	}
 	return errors.New("unknown config file extension")
 }
 
-// Unmarshal JSON configuration file.
-func UnmarshalJSON(filename string, c *Config) error {
+// unmarshalJSON configuration file.
+func unmarshalJSON(filename string, c *Config) error {
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return err
@@ -39,8 +39,8 @@ func UnmarshalJSON(filename string, c *Config) error {
 	return nil
 }
 
-// Unmarshal YAML configuration file.
-func UnmarshalYAML(filename string, c *Config) error {
+// unmarshalYAML configuration file.
+func unmarshalYAML(filename string, c *Config) error {
 	file, err := os.ReadFile(filename)
 	if err != nil {
 		return err

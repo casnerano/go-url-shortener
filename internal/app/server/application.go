@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -83,30 +82,7 @@ func (app *Application) RunServer() error {
 // Initialization configs.
 func (app *Application) initConfig() {
 	app.Config = config.New()
-	app.Config.SetDefaultValues()
-
-	if err := app.Config.SetConfigFileValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if err := app.Config.SetAppFlagValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if err := app.Config.SetEnvironmentValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if app.Config.Storage.DSN != "" {
-		app.Config.Storage.Type = config.StorageTypeDatabase
-	}
-
-	if app.Config.Storage.Path != "" {
-		app.Config.Storage.Type = config.StorageTypeFile
-	}
+	app.Config.Init()
 }
 
 func (app *Application) initRouter() {
