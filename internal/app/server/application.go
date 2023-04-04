@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,6 +25,7 @@ import (
 // Application the structure that is responsible for all dependencies
 // and contains the methods of launching the application.
 type Application struct {
+	Server  *http.Server
 	Config  *config.Config
 	Store   repository.Store
 	router  *chi.Mux
@@ -46,6 +48,13 @@ func (app *Application) init() {
 
 // Shutdown closes all open resources.
 func (app *Application) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err := app.Server.Shutdown(ctx); err != nil {
+		return err
+	}
+
 	if closer, ok := app.Store.(io.Closer); ok {
 		_ = closer.Close()
 	}
@@ -60,7 +69,7 @@ func (app *Application) RunServer() error {
 	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
 
-	srv := &http.Server{
+	app.Server = &http.Server{
 		Addr:    app.Config.Server.Addr,
 		Handler: app.router,
 	}
@@ -72,11 +81,11 @@ func (app *Application) RunServer() error {
 			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
 		}
 
-		srv.TLSConfig = autoCertManager.TLSConfig()
-		return srv.ListenAndServeTLS("", "")
+		app.Server.TLSConfig = autoCertManager.TLSConfig()
+		return app.Server.ListenAndServeTLS("", "")
 	}
 
-	return srv.ListenAndServe()
+	return app.Server.ListenAndServe()
 }
 
 // Initialization configs.
