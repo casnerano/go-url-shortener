@@ -90,12 +90,12 @@ func (app *Application) initConfig() {
 		// todo: logging
 	}
 
-	if err := app.Config.SetEnvironmentValues(); err != nil {
+	if err := app.Config.SetAppFlagValues(); err != nil {
 		log.Fatal(err.Error())
 		// todo: logging
 	}
 
-	if err := app.Config.SetAppFlagValues(); err != nil {
+	if err := app.Config.SetEnvironmentValues(); err != nil {
 		log.Fatal(err.Error())
 		// todo: logging
 	}
