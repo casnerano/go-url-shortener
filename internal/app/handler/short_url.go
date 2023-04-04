@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -37,7 +36,6 @@ func NewShortURL(cfg *config.Config, urlService *service.URL) *ShortURL {
 
 // GetOriginalURL the handler returns the original short url.
 func (s *ShortURL) GetOriginalURL(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(time.Second * 10)
 	shortCode := chi.URLParam(r, "shortCode")
 
 	if shortCode == "" {
