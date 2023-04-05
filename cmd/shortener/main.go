@@ -34,8 +34,11 @@ func main() {
 
 	app := server.NewApplication()
 
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
-		go cleaner.New(app.Store).CleanOlderShortURL(ttl)
+		go cleaner.New(app.Store).CleanOlderShortURL(ctx, ttl)
 	}
 
 	go func() {
@@ -46,9 +49,6 @@ func main() {
 			)
 		}
 	}()
-
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	<-ctx.Done()
 
