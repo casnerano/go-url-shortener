@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/handler"
@@ -24,6 +25,7 @@ import (
 // Application the structure that is responsible for all dependencies
 // and contains the methods of launching the application.
 type Application struct {
+	Server  *http.Server
 	Config  *config.Config
 	Store   repository.Store
 	router  *chi.Mux
@@ -46,6 +48,13 @@ func (app *Application) init() {
 
 // Shutdown closes all open resources.
 func (app *Application) Shutdown() error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	if err := app.Server.Shutdown(ctx); err != nil {
+		return err
+	}
+
 	if closer, ok := app.Store.(io.Closer); ok {
 		_ = closer.Close()
 	}
@@ -59,36 +68,30 @@ func (app *Application) Shutdown() error {
 func (app *Application) RunServer() error {
 	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
 	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
-	return http.ListenAndServe(app.Config.Server.Addr, app.router)
+
+	app.Server = &http.Server{
+		Addr:    app.Config.Server.Addr,
+		Handler: app.router,
+	}
+
+	if app.Config.Server.EnableHTTPS {
+		autoCertManager := &autocert.Manager{
+			Cache:      autocert.DirCache("./var"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
+		}
+
+		app.Server.TLSConfig = autoCertManager.TLSConfig()
+		return app.Server.ListenAndServeTLS("", "")
+	}
+
+	return app.Server.ListenAndServe()
 }
 
 // Initialization configs.
 func (app *Application) initConfig() {
 	app.Config = config.New()
-	app.Config.SetDefaultValues()
-
-	if err := app.Config.SetConfigFileValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if err := app.Config.SetEnvironmentValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if err := app.Config.SetAppFlagValues(); err != nil {
-		log.Fatal(err.Error())
-		// todo: logging
-	}
-
-	if app.Config.Storage.DSN != "" {
-		app.Config.Storage.Type = config.StorageTypeDatabase
-	}
-
-	if app.Config.Storage.Path != "" {
-		app.Config.Storage.Type = config.StorageTypeFile
-	}
+	app.Config.Init()
 }
 
 func (app *Application) initRouter() {

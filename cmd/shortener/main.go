@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
+	"net/http"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/casnerano/go-url-shortener/internal/app/server"
 	"github.com/casnerano/go-url-shortener/internal/app/service/cleaner"
@@ -28,12 +33,33 @@ func main() {
 		buildCommit,
 	)
 
+	wg := &sync.WaitGroup{}
 	app := server.NewApplication()
-	defer app.Shutdown()
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
-		go cleaner.New(app.Store).CleanOlderShortURL(ttl)
+		wg.Add(1)
+		go cleaner.New(app.Store).CleanOlderShortURL(ctx, wg, ttl)
 	}
 
-	log.Fatal(app.RunServer())
+	go func() {
+		if err := app.RunServer(); err != nil && err != http.ErrServerClosed {
+			log.Fatal(
+				fmt.Sprintf("Failed to start server at %s", app.Config.Server.Addr),
+				err,
+			)
+		}
+	}()
+
+	<-ctx.Done()
+
+	wg.Wait()
+
+	fmt.Println("Shutting down server..")
+
+	if err := app.Shutdown(); err != nil {
+		log.Fatal(err)
+	}
 }

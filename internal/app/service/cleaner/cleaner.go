@@ -2,6 +2,8 @@ package cleaner
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"time"
 
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
@@ -18,7 +20,9 @@ func New(s repository.Store) *Cleaner {
 }
 
 // CleanOlderShortURL runs a method to remove ShortURL every second.
-func (cln *Cleaner) CleanOlderShortURL(ttl int) {
+func (cln *Cleaner) CleanOlderShortURL(ctx context.Context, wg *sync.WaitGroup, ttl int) {
+	defer wg.Done()
+
 	d := time.Second * time.Duration(ttl)
 	rep := cln.store.URL()
 
@@ -26,7 +30,12 @@ func (cln *Cleaner) CleanOlderShortURL(ttl int) {
 	defer ticker.Stop()
 
 	for {
-		<-ticker.C
-		_ = rep.DeleteOlderRows(context.TODO(), d)
+		select {
+		case <-ticker.C:
+			_ = rep.DeleteOlderRows(ctx, d)
+		case <-ctx.Done():
+			fmt.Println("Cleaner older ShortURL stopped.")
+			return
+		}
 	}
 }
