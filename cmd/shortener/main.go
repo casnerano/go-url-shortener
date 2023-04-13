@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/casnerano/go-url-shortener/internal/app/server"
@@ -32,13 +33,15 @@ func main() {
 		buildCommit,
 	)
 
+	wg := &sync.WaitGroup{}
 	app := server.NewApplication()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
-		go cleaner.New(app.Store).CleanOlderShortURL(ctx, ttl)
+		wg.Add(1)
+		go cleaner.New(app.Store).CleanOlderShortURL(ctx, wg, ttl)
 	}
 
 	go func() {
@@ -51,6 +54,8 @@ func main() {
 	}()
 
 	<-ctx.Done()
+
+	wg.Wait()
 
 	fmt.Println("Shutting down server..")
 
