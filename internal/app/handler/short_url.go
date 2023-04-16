@@ -269,6 +269,7 @@ func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// GetStats the handler get users and urls count, used json format.
 func (s *ShortURL) GetStats(w http.ResponseWriter, r *http.Request) {
 	urlsCount, err := s.urlService.GetTotalURLCount()
 	if err != nil {
@@ -283,7 +284,7 @@ func (s *ShortURL) GetStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	
+
 	rb, _ := json.Marshal(struct {
 		Urls int `json:"urls"`
 		User int `json:"users"`
