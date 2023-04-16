@@ -296,6 +296,43 @@ func TestShortURL_DeleteBatchJSON(t *testing.T) {
 	})
 }
 
+func TestShortURL_GetStats(t *testing.T) {
+	URLRepository := memstore.NewStore().URL()
+	randHashService, _ := hasher.NewRandom(1, 1)
+	shortURLService := service.NewURL(URLRepository, randHashService)
+
+	cfg := config.New()
+	cfg.SetDefaultValues()
+	shortURLHandlerGroup := NewShortURL(cfg, shortURLService)
+
+	router := chi.NewRouter()
+	router.Get("/api/internal/stats", shortURLHandlerGroup.GetStats)
+
+	testServer := httptest.NewServer(router)
+	defer testServer.Close()
+
+	shortURLOne := &model.ShortURL{Code: "short1", Original: "large1", UserUUID: "test1_uuid"}
+	shortURLTwo := &model.ShortURL{Code: "short2", Original: "large2", UserUUID: "test1_uuid"}
+	shortURLThree := &model.ShortURL{Code: "short3", Original: "large3", UserUUID: "test2_uuid"}
+
+	err := URLRepository.Add(context.Background(), shortURLOne)
+	require.NoError(t, err)
+
+	err = URLRepository.Add(context.Background(), shortURLTwo)
+	require.NoError(t, err)
+
+	err = URLRepository.Add(context.Background(), shortURLThree)
+	require.NoError(t, err)
+
+	request, _ := http.NewRequest(http.MethodGet, testServer.URL+"/api/internal/stats", nil)
+
+	t.Run("check stat result", func(t *testing.T) {
+		statusCode, responseBody := testRequest(t, request)
+		require.Equal(t, http.StatusOK, statusCode)
+		require.Equal(t, `{"urls":3,"users":2}`, responseBody)
+	})
+}
+
 func TestShortURL_httpJSONError(t *testing.T) {
 	t.Run("http json error", func(t *testing.T) {
 		s := &ShortURL{}
