@@ -27,7 +27,6 @@ func TrustedSubnet(subnet string) func(next http.Handler) http.Handler {
 			}
 
 			next.ServeHTTP(w, r)
-			return
 		})
 	}
 }
