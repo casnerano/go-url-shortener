@@ -130,7 +130,12 @@ func (app *Application) initRoutes() {
 	app.router.Post("/", shortURL.PostText)
 
 	app.router.Route("/api", func(r chi.Router) {
-		r.Get("/internal/stats", shortURL.GetStats)
+		r.Route("/internal/stats", func(r chi.Router) {
+			if app.Config.Server.TrustedSubnet != "" {
+				r.Use(middleware.TrustedSubnet(app.Config.Server.TrustedSubnet))
+			}
+			r.Get("/", shortURL.GetStats)
+		})
 
 		r.Post("/shorten", shortURL.PostJSON)
 		r.Post("/shorten/batch", shortURL.PostBatchJSON)

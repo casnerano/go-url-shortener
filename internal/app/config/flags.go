@@ -6,9 +6,10 @@ import "flag"
 type Flags struct {
 	ConfigName string
 	Server     struct {
-		Addr        string
-		EnableHTTPS bool
-		BaseURL     string
+		TrustedSubnet string
+		Addr          string
+		EnableHTTPS   bool
+		BaseURL       string
 	}
 	Storage struct {
 		Path string
@@ -22,6 +23,7 @@ func parseFlags(c *Config) *Flags {
 	flag.StringVar(&flags.Server.Addr, "a", c.Server.Addr, "Server addr")
 	flag.BoolVar(&flags.Server.EnableHTTPS, "s", c.Server.EnableHTTPS, "Enable HTTPS")
 	flag.StringVar(&flags.Server.BaseURL, "b", c.Server.BaseURL, "Base URL")
+	flag.StringVar(&flags.Server.TrustedSubnet, "t", c.Server.TrustedSubnet, "Trusted Subnet")
 	flag.StringVar(&flags.Storage.Path, "f", c.Storage.Path, "File storage path")
 	flag.StringVar(&flags.Storage.DSN, "d", c.Storage.DSN, "Database connection DSN")
 
