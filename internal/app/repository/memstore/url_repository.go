@@ -108,3 +108,19 @@ func (rep *URLRepository) DeleteOlderRows(_ context.Context, d time.Duration) er
 	}
 	return nil
 }
+
+// Get total Short URL count
+func (rep *URLRepository) GetTotalURLCount(_ context.Context) (int, error) {
+	return len(rep.store.ShortURLStorage), nil
+}
+
+// Get total User count
+func (rep *URLRepository) GetTotalUserCount(_ context.Context) (int, error) {
+	mc := make(map[string]int)
+	for _, shortURL := range rep.store.ShortURLStorage {
+		if shortURL.UserUUID != "" {
+			mc[shortURL.UserUUID]++
+		}
+	}
+	return len(mc), nil
+}

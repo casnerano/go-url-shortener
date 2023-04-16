@@ -269,6 +269,32 @@ func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+func (s *ShortURL) GetStats(w http.ResponseWriter, r *http.Request) {
+	urlsCount, err := s.urlService.GetTotalURLCount()
+	if err != nil {
+		http.Error(w, errServerInternal.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	usersCount, err := s.urlService.GetTotalUserCount()
+	if err != nil {
+		http.Error(w, errServerInternal.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	
+	rb, _ := json.Marshal(struct {
+		Urls int `json:"urls"`
+		User int `json:"users"`
+	}{
+		urlsCount,
+		usersCount,
+	})
+
+	fmt.Fprint(w, string(rb))
+}
+
 func (s *ShortURL) buildAbsoluteShortURL(shortCode string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Server.BaseURL, shortCode)
 }

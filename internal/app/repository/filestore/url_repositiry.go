@@ -69,3 +69,13 @@ func (rep *URLRepository) DeleteOlderRows(ctx context.Context, age time.Duration
 	defer rep.store.Commit(true)
 	return rep.store.memStore.URL().DeleteOlderRows(ctx, age)
 }
+
+// Get total Short URL count
+func (rep *URLRepository) GetTotalURLCount(ctx context.Context) (int, error) {
+	return rep.store.memStore.URL().GetTotalURLCount(ctx)
+}
+
+// Get total User count
+func (rep *URLRepository) GetTotalUserCount(ctx context.Context) (int, error) {
+	return rep.store.memStore.URL().GetTotalUserCount(ctx)
+}
