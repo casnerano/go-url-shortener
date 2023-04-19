@@ -39,15 +39,15 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
+	if ttl := app.GetConfig().ShortURL.TTL; ttl > 0 {
 		wg.Add(1)
-		go cleaner.New(app.Store).CleanOlderShortURL(ctx, wg, ttl)
+		go cleaner.New(app.GetStore()).CleanOlderShortURL(ctx, wg, ttl)
 	}
 
 	go func() {
-		if err := app.RunServer(); err != nil && err != http.ErrServerClosed {
+		if err := app.RunHTTPServer(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(
-				fmt.Sprintf("Failed to start server at %s", app.Config.Server.Addr),
+				fmt.Sprintf("Failed to start server at %s", app.GetConfig().Server.Addr),
 				err,
 			)
 		}

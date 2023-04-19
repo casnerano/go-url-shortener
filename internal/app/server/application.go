@@ -16,8 +16,8 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
-	handler2 "github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
-	middleware2 "github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
@@ -25,16 +25,18 @@ import (
 // Application the structure that is responsible for all dependencies
 // and contains the methods of launching the application.
 type Application struct {
-	Server  *http.Server
-	Config  *config.Config
-	Store   repository.Store
+	server  *http.Server
+	config  *config.Config
+	store   repository.Store
 	router  *chi.Mux
 	pgxpool *pgxpool.Pool
 }
 
 // NewApplication - constructor.
 func NewApplication() *Application {
-	app := &Application{}
+	app := &Application{
+		router: chi.NewRouter(),
+	}
 	app.init()
 	return app
 }
@@ -42,8 +44,17 @@ func NewApplication() *Application {
 func (app *Application) init() {
 	app.initConfig()
 	app.initRepositoryStore()
-	app.initRouter()
-	app.initRoutes()
+	app.initHTTPRoutes()
+}
+
+// GetStore getter for app store
+func (app *Application) GetStore() repository.Store {
+	return app.store
+}
+
+// GetConfig getter for app config
+func (app *Application) GetConfig() *config.Config {
+	return app.config
 }
 
 // Shutdown closes all open resources.
@@ -51,11 +62,11 @@ func (app *Application) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	if err := app.Server.Shutdown(ctx); err != nil {
+	if err := app.server.Shutdown(ctx); err != nil {
 		return err
 	}
 
-	if closer, ok := app.Store.(io.Closer); ok {
+	if closer, ok := app.store.(io.Closer); ok {
 		_ = closer.Close()
 	}
 	if app.pgxpool != nil {
@@ -64,75 +75,71 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-// RunServer run server.
-func (app *Application) RunServer() error {
-	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
-	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
+// RunHTTPServer run server.
+func (app *Application) RunHTTPServer() error {
+	fmt.Printf("Server started: %s\n", app.config.Server.Addr)
+	fmt.Printf("Use storage is %s\n", app.config.Storage.Type)
 
-	app.Server = &http.Server{
-		Addr:    app.Config.Server.Addr,
+	app.server = &http.Server{
+		Addr:    app.config.Server.Addr,
 		Handler: app.router,
 	}
 
-	if app.Config.Server.EnableHTTPS {
+	if app.config.Server.EnableHTTPS {
 		autoCertManager := &autocert.Manager{
 			Cache:      autocert.DirCache("./var"),
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
 		}
 
-		app.Server.TLSConfig = autoCertManager.TLSConfig()
-		return app.Server.ListenAndServeTLS("", "")
+		app.server.TLSConfig = autoCertManager.TLSConfig()
+		return app.server.ListenAndServeTLS("", "")
 	}
 
-	return app.Server.ListenAndServe()
+	return app.server.ListenAndServe()
 }
 
 // Initialization configs.
 func (app *Application) initConfig() {
-	app.Config = config.New()
-	app.Config.Init()
-}
-
-func (app *Application) initRouter() {
-	app.router = chi.NewRouter()
+	app.config = config.New()
+	app.config.Init()
 }
 
 func (app *Application) initRepositoryStore() {
-	switch app.Config.Storage.Type {
+	switch app.config.Storage.Type {
 	case config.StorageTypeDatabase:
 		_pgxpool, err := app.getDBConnection()
 		if err != nil {
 			panic(err)
 		}
-		app.Store = sqlstore.NewStore(_pgxpool)
+		app.store = sqlstore.NewStore(_pgxpool)
 	case config.StorageTypeFile:
-		store, err := filestore.NewStore(app.Config.Storage.Path)
+		store, err := filestore.NewStore(app.config.Storage.Path)
 		if err != nil {
 			panic(err)
 		}
-		app.Store = store
+		app.store = store
 	default:
-		app.Store = memstore.NewStore()
+		app.store = memstore.NewStore()
 	}
 }
 
 // Initialization routes.
-func (app *Application) initRoutes() {
+func (app *Application) initHTTPRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 	database := app.getDatabaseHandlerGroup()
 
-	app.router.Use(middleware2.Authenticate([]byte(app.Config.App.Secret)))
-	app.router.Use(middleware2.GzipCompress(1400))
-	app.router.Use(middleware2.GzipDecompress())
+	app.router.Use(middleware.Authenticate([]byte(app.config.App.Secret)))
+	app.router.Use(middleware.GzipCompress(1400))
+	app.router.Use(middleware.GzipDecompress())
 
 	app.router.Get("/{shortCode}", shortURL.GetOriginalURL)
 	app.router.Post("/", shortURL.PostText)
 
 	app.router.Route("/api", func(r chi.Router) {
 		r.Route("/internal/stats", func(r chi.Router) {
-			if app.Config.Server.TrustedSubnet != "" {
-				r.Use(middleware2.TrustedSubnet(app.Config.Server.TrustedSubnet))
+			if app.config.Server.TrustedSubnet != "" {
+				r.Use(middleware.TrustedSubnet(app.config.Server.TrustedSubnet))
 			}
 			r.Get("/", shortURL.GetStats)
 		})
@@ -153,19 +160,19 @@ func (app *Application) getURLHashService() (h hasher.Hash) {
 }
 
 // Handler group for url shortener.
-func (app *Application) getShortURLHandlerGroup() *handler2.ShortURL {
-	URLRepository := app.Store.URL()
+func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
+	URLRepository := app.store.URL()
 	hashService := app.getURLHashService()
-	return handler2.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
+	return handler.NewShortURL(app.config, service.NewURL(URLRepository, hashService))
 }
 
 // Handler group for database.
-func (app *Application) getDatabaseHandlerGroup() *handler2.Database {
+func (app *Application) getDatabaseHandlerGroup() *handler.Database {
 	_pgxpool, err := app.getDBConnection()
 	if err != nil {
 		panic(err)
 	}
-	return handler2.NewDatabase(_pgxpool)
+	return handler.NewDatabase(_pgxpool)
 }
 
 // Database connection.
@@ -174,7 +181,7 @@ func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
 		return app.pgxpool, nil
 	}
 
-	dsn := app.Config.Storage.DSN
+	dsn := app.config.Storage.DSN
 
 	var err error
 	app.pgxpool, err = pgxpool.New(context.Background(), dsn)
