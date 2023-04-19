@@ -4,18 +4,22 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/acme/autocert"
+	google_grpc "google.golang.org/grpc"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
+	"github.com/casnerano/go-url-shortener/internal/app/server/grpc"
+	pb "github.com/casnerano/go-url-shortener/internal/app/server/grpc/proto"
 	"github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
@@ -25,11 +29,12 @@ import (
 // Application the structure that is responsible for all dependencies
 // and contains the methods of launching the application.
 type Application struct {
-	server  *http.Server
-	config  *config.Config
-	store   repository.Store
-	router  *chi.Mux
-	pgxpool *pgxpool.Pool
+	httpServer *http.Server
+	grpServer  *google_grpc.Server
+	config     *config.Config
+	store      repository.Store
+	router     *chi.Mux
+	pgxpool    *pgxpool.Pool
 }
 
 // NewApplication - constructor.
@@ -44,7 +49,6 @@ func NewApplication() *Application {
 func (app *Application) init() {
 	app.initConfig()
 	app.initRepositoryStore()
-	app.initHTTPRoutes()
 }
 
 // GetStore getter for app store
@@ -62,7 +66,7 @@ func (app *Application) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	if err := app.server.Shutdown(ctx); err != nil {
+	if err := app.httpServer.Shutdown(ctx); err != nil {
 		return err
 	}
 
@@ -75,12 +79,13 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-// RunHTTPServer run server.
+// RunHTTPServer run HTTP server.
 func (app *Application) RunHTTPServer() error {
-	fmt.Printf("Server started: %s\n", app.config.Server.Addr)
-	fmt.Printf("Use storage is %s\n", app.config.Storage.Type)
+	app.initHTTPRoutes()
 
-	app.server = &http.Server{
+	fmt.Printf("HTTP Server started: %s\n", app.config.Server.Addr)
+
+	app.httpServer = &http.Server{
 		Addr:    app.config.Server.Addr,
 		Handler: app.router,
 	}
@@ -92,11 +97,26 @@ func (app *Application) RunHTTPServer() error {
 			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
 		}
 
-		app.server.TLSConfig = autoCertManager.TLSConfig()
-		return app.server.ListenAndServeTLS("", "")
+		app.httpServer.TLSConfig = autoCertManager.TLSConfig()
+		return app.httpServer.ListenAndServeTLS("", "")
 	}
 
-	return app.server.ListenAndServe()
+	return app.httpServer.ListenAndServe()
+}
+
+// RunGRPCServer run GRPC server.
+func (app *Application) RunGRPCServer() error {
+	fmt.Println("GRPC Server started: :3200")
+
+	listen, err := net.Listen("tcp", ":3200")
+	if err != nil {
+		return err
+	}
+
+	app.grpServer = google_grpc.NewServer()
+	pb.RegisterShortenerServer(app.grpServer, &grpc.ShortenerServer{})
+
+	return app.grpServer.Serve(listen)
 }
 
 // Initialization configs.
