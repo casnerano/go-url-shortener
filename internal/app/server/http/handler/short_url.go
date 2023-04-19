@@ -10,9 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 )
 

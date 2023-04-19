@@ -16,9 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 	"github.com/casnerano/go-url-shortener/pkg/crypter"

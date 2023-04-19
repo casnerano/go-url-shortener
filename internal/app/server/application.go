@@ -12,12 +12,12 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/handler"
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
+	handler2 "github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
+	middleware2 "github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
@@ -122,9 +122,9 @@ func (app *Application) initRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 	database := app.getDatabaseHandlerGroup()
 
-	app.router.Use(middleware.Authenticate([]byte(app.Config.App.Secret)))
-	app.router.Use(middleware.GzipCompress(1400))
-	app.router.Use(middleware.GzipDecompress())
+	app.router.Use(middleware2.Authenticate([]byte(app.Config.App.Secret)))
+	app.router.Use(middleware2.GzipCompress(1400))
+	app.router.Use(middleware2.GzipDecompress())
 
 	app.router.Get("/{shortCode}", shortURL.GetOriginalURL)
 	app.router.Post("/", shortURL.PostText)
@@ -132,7 +132,7 @@ func (app *Application) initRoutes() {
 	app.router.Route("/api", func(r chi.Router) {
 		r.Route("/internal/stats", func(r chi.Router) {
 			if app.Config.Server.TrustedSubnet != "" {
-				r.Use(middleware.TrustedSubnet(app.Config.Server.TrustedSubnet))
+				r.Use(middleware2.TrustedSubnet(app.Config.Server.TrustedSubnet))
 			}
 			r.Get("/", shortURL.GetStats)
 		})
@@ -153,19 +153,19 @@ func (app *Application) getURLHashService() (h hasher.Hash) {
 }
 
 // Handler group for url shortener.
-func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
+func (app *Application) getShortURLHandlerGroup() *handler2.ShortURL {
 	URLRepository := app.Store.URL()
 	hashService := app.getURLHashService()
-	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
+	return handler2.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
 }
 
 // Handler group for database.
-func (app *Application) getDatabaseHandlerGroup() *handler.Database {
+func (app *Application) getDatabaseHandlerGroup() *handler2.Database {
 	_pgxpool, err := app.getDBConnection()
 	if err != nil {
 		panic(err)
 	}
-	return handler.NewDatabase(_pgxpool)
+	return handler2.NewDatabase(_pgxpool)
 }
 
 // Database connection.
