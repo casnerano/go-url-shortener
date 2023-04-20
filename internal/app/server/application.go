@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	pb "github.com/casnerano/go-url-shortener/internal/app/proto"
+	"github.com/casnerano/go-url-shortener/internal/app/server/grpc/interceptor"
 	"io"
 	"net"
 	"net/http"
@@ -113,8 +114,14 @@ func (app *Application) RunGRPCServer() error {
 		return err
 	}
 
-	app.grpServer = google_grpc.NewServer()
-	pb.RegisterShortenerServer(app.grpServer, &grpc.ShortenerServer{})
+	app.grpServer = google_grpc.NewServer(
+		google_grpc.UnaryInterceptor(interceptor.UnaryServer),
+	)
+
+	pb.RegisterShortenerServer(
+		app.grpServer,
+		grpc.NewShortenerServer(app.config, app.getShortURLService()),
+	)
 
 	return app.grpServer.Serve(listen)
 }
@@ -179,11 +186,15 @@ func (app *Application) getURLHashService() (h hasher.Hash) {
 	return
 }
 
-// Handler group for url shortener.
-func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
+func (app *Application) getShortURLService() *service.URL {
 	URLRepository := app.store.URL()
 	hashService := app.getURLHashService()
-	return handler.NewShortURL(app.config, service.NewURL(URLRepository, hashService))
+	return service.NewURL(URLRepository, hashService)
+}
+
+// Handler group for url shortener.
+func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
+	return handler.NewShortURL(app.config, app.getShortURLService())
 }
 
 // Handler group for database.

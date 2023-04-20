@@ -6,12 +6,18 @@ option go_package = "github.com/casnerano/go-url-shortener/internal/app/proto";
 
 import "google/protobuf/empty.proto";
 
+message Error {
+  string message = 1;
+  string code = 2;
+}
+
 message GetShortURLRequest {
-  string short_url = 1;
+  string short_code = 1;
 }
 
 message GetShortURLResponse {
   string result = 1;
+  Error error = 2;
 }
 
 message GetUserHistoryShortURLResponse {
