@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "github.com/casnerano/go-url-shortener/internal/app/server/grpc/proto";
+option go_package = "github.com/casnerano/go-url-shortener/internal/app/proto";
 
 import "google/protobuf/empty.proto";
 

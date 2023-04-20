@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	pb "github.com/casnerano/go-url-shortener/internal/app/proto"
 	"io"
 	"net"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
 	"github.com/casnerano/go-url-shortener/internal/app/server/grpc"
-	pb "github.com/casnerano/go-url-shortener/internal/app/server/grpc/proto"
 	"github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
 	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
