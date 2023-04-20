@@ -10,8 +10,11 @@ import (
 	"github.com/casnerano/go-url-shortener/internal/app/service/crypter"
 )
 
+// ContextUserUUIDType for context keys.
+type ContextUserUUIDType string
+
 // Meta key for user uuid.
-const MetaUserUUIDKey = "SEC_USER_UUID"
+const MetaUserUUIDKey ContextUserUUIDType = "SEC_USER_UUID"
 
 // UnaryServer interceptor for server
 // used to forward the user uuid
@@ -29,7 +32,7 @@ func UnaryServer(key []byte) grpc.UnaryServerInterceptor {
 		)
 
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
-			if values := md.Get(MetaUserUUIDKey); len(values) > 0 {
+			if values := md.Get(string(MetaUserUUIDKey)); len(values) > 0 {
 				userUUID, err = crypter.DecryptString(values[0], key)
 				if err != nil {
 					return nil, err
@@ -47,7 +50,6 @@ func UnaryServer(key []byte) grpc.UnaryServerInterceptor {
 		}
 
 		ctx = context.WithValue(ctx, MetaUserUUIDKey, userUUID)
-
 		return handler(ctx, req)
 	}
 }
