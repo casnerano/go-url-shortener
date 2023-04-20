@@ -54,7 +54,7 @@ func (s *ShortenerServer) GetUserHistory(ctx context.Context, in *emptypb.Empty)
 
 	ctxUserUUID := ctx.Value(interceptor.MetaUserUUIDKey)
 	userUUID, ok := ctxUserUUID.(string)
-	if !ok {
+	if !ok || len(userUUID) == 0 {
 		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
 	}
 
@@ -104,7 +104,7 @@ func (s *ShortenerServer) CreateURL(ctx context.Context, in *proto.CreateShortUR
 
 	ctxUserUUID := ctx.Value(interceptor.MetaUserUUIDKey)
 	userUUID, ok := ctxUserUUID.(string)
-	if !ok {
+	if !ok || len(userUUID) == 0 {
 		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
 	}
 
@@ -133,7 +133,7 @@ func (s *ShortenerServer) CreateBatch(ctx context.Context, in *proto.CreateBatch
 
 	ctxUserUUID := ctx.Value(interceptor.MetaUserUUIDKey)
 	userUUID, ok := ctxUserUUID.(string)
-	if !ok {
+	if !ok || len(userUUID) == 0 {
 		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
 	}
 
@@ -164,7 +164,7 @@ func (s *ShortenerServer) CreateBatch(ctx context.Context, in *proto.CreateBatch
 func (s *ShortenerServer) DeleteBatch(ctx context.Context, in *proto.DeleteBatchRequest) (*emptypb.Empty, error) {
 	ctxUserUUID := ctx.Value(interceptor.MetaUserUUIDKey)
 	userUUID, ok := ctxUserUUID.(string)
-	if !ok {
+	if !ok || len(userUUID) == 0 {
 		return nil, status.Error(codes.Unauthenticated, codes.Unauthenticated.String())
 	}
 
@@ -172,7 +172,7 @@ func (s *ShortenerServer) DeleteBatch(ctx context.Context, in *proto.DeleteBatch
 		_ = s.urlService.DeleteBatch(in.Items, userUUID)
 	}()
 
-	return nil, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (s *ShortenerServer) buildAbsoluteShortURL(shortCode string) string {

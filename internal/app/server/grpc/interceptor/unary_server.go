@@ -5,7 +5,9 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"github.com/casnerano/go-url-shortener/internal/app/service/crypter"
 )
@@ -35,12 +37,12 @@ func UnaryServer(key []byte) grpc.UnaryServerInterceptor {
 			if values := md.Get(string(MetaUserUUIDKey)); len(values) > 0 {
 				userUUID, err = crypter.DecryptString(values[0], key)
 				if err != nil {
-					return nil, err
+					return nil, status.Error(codes.Internal, err.Error())
 				}
 			}
 		}
 
-		if userUUID != "" {
+		if userUUID == "" {
 			gUUID, err := uuid.NewUUID()
 			if err != nil {
 				return nil, err
