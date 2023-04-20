@@ -29,7 +29,7 @@ func UnaryServer(key []byte) grpc.UnaryServerInterceptor {
 		)
 
 		if md, ok := metadata.FromIncomingContext(ctx); ok {
-			if values := md.Get(MetaUserUUIDKey); len(values) < 0 {
+			if values := md.Get(MetaUserUUIDKey); len(values) > 0 {
 				userUUID, err = crypter.DecryptString(values[0], key)
 				if err != nil {
 					return nil, err
