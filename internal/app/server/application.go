@@ -3,12 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
-	pb "github.com/casnerano/go-url-shortener/internal/app/proto"
-	"github.com/casnerano/go-url-shortener/internal/app/server/grpc/interceptor"
 	"io"
 	"net"
 	"net/http"
 	"time"
+
+	pb "github.com/casnerano/go-url-shortener/internal/app/proto"
+	"github.com/casnerano/go-url-shortener/internal/app/server/grpc/interceptor"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -115,7 +116,9 @@ func (app *Application) RunGRPCServer() error {
 	}
 
 	app.grpServer = google_grpc.NewServer(
-		google_grpc.UnaryInterceptor(interceptor.UnaryServer),
+		google_grpc.UnaryInterceptor(
+			interceptor.UnaryServer([]byte(app.config.App.Secret)),
+		),
 	)
 
 	pb.RegisterShortenerServer(
