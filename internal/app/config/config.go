@@ -29,6 +29,7 @@ type Config struct {
 		TrustedSubnet string `json:"trusted_subnet" yaml:"trusted_subnet" env:"TRUSTED_SUBNET"`
 		EnableHTTPS   bool   `json:"enable_https" yaml:"enable_https" env:"ENABLE_HTTPS"`
 		Addr          string `json:"addr" yaml:"addr" env:"SERVER_ADDRESS"`
+		GRPCAddr      string `json:"grpc_addr" yaml:"grpc_addr"`
 		BaseURL       string `json:"base_url" yaml:"base_url" env:"BASE_URL"`
 	} `json:"server" yaml:"server" env:"-"`
 	Storage struct {
@@ -84,6 +85,7 @@ func (c *Config) SetDefaultValues() {
 
 	c.Server.TrustedSubnet = "127.0.0.0/24"
 	c.Server.Addr = "127.0.0.1:8080"
+	c.Server.GRPCAddr = "127.0.0.1:3200"
 	c.Server.BaseURL = "http://localhost:8080"
 
 	c.Storage.Type = StorageTypeMemory

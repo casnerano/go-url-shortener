@@ -106,9 +106,9 @@ func (app *Application) RunHTTPServer() error {
 
 // RunGRPCServer run GRPC server.
 func (app *Application) RunGRPCServer() error {
-	fmt.Println("GRPC Server started: :3200")
+	fmt.Printf("GRPC Server started: %s\n", app.config.Server.GRPCAddr)
 
-	listen, err := net.Listen("tcp", ":3200")
+	listen, err := net.Listen("tcp", app.config.Server.GRPCAddr)
 	if err != nil {
 		return err
 	}
