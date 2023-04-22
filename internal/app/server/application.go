@@ -4,20 +4,26 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"time"
+
+	pb "github.com/casnerano/go-url-shortener/internal/app/proto"
+	"github.com/casnerano/go-url-shortener/internal/app/server/grpc/interceptor"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/acme/autocert"
+	google_grpc "google.golang.org/grpc"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/handler"
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/filestore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/memstore"
 	"github.com/casnerano/go-url-shortener/internal/app/repository/sqlstore"
+	"github.com/casnerano/go-url-shortener/internal/app/server/grpc"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/handler"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 	"github.com/casnerano/go-url-shortener/internal/app/service/hasher"
 )
@@ -25,16 +31,19 @@ import (
 // Application the structure that is responsible for all dependencies
 // and contains the methods of launching the application.
 type Application struct {
-	Server  *http.Server
-	Config  *config.Config
-	Store   repository.Store
-	router  *chi.Mux
-	pgxpool *pgxpool.Pool
+	httpServer *http.Server
+	grpServer  *google_grpc.Server
+	config     *config.Config
+	store      repository.Store
+	router     *chi.Mux
+	pgxpool    *pgxpool.Pool
 }
 
 // NewApplication - constructor.
 func NewApplication() *Application {
-	app := &Application{}
+	app := &Application{
+		router: chi.NewRouter(),
+	}
 	app.init()
 	return app
 }
@@ -42,8 +51,16 @@ func NewApplication() *Application {
 func (app *Application) init() {
 	app.initConfig()
 	app.initRepositoryStore()
-	app.initRouter()
-	app.initRoutes()
+}
+
+// GetStore getter for app store
+func (app *Application) GetStore() repository.Store {
+	return app.store
+}
+
+// GetConfig getter for app config
+func (app *Application) GetConfig() *config.Config {
+	return app.config
 }
 
 // Shutdown closes all open resources.
@@ -51,11 +68,11 @@ func (app *Application) Shutdown() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	if err := app.Server.Shutdown(ctx); err != nil {
+	if err := app.httpServer.Shutdown(ctx); err != nil {
 		return err
 	}
 
-	if closer, ok := app.Store.(io.Closer); ok {
+	if closer, ok := app.store.(io.Closer); ok {
 		_ = closer.Close()
 	}
 	if app.pgxpool != nil {
@@ -64,65 +81,85 @@ func (app *Application) Shutdown() error {
 	return nil
 }
 
-// RunServer run server.
-func (app *Application) RunServer() error {
-	fmt.Printf("Server started: %s\n", app.Config.Server.Addr)
-	fmt.Printf("Use storage is %s\n", app.Config.Storage.Type)
+// RunHTTPServer run HTTP server.
+func (app *Application) RunHTTPServer() error {
+	app.initHTTPRoutes()
 
-	app.Server = &http.Server{
-		Addr:    app.Config.Server.Addr,
+	fmt.Printf("HTTP Server started: %s\n", app.config.Server.Addr)
+
+	app.httpServer = &http.Server{
+		Addr:    app.config.Server.Addr,
 		Handler: app.router,
 	}
 
-	if app.Config.Server.EnableHTTPS {
+	if app.config.Server.EnableHTTPS {
 		autoCertManager := &autocert.Manager{
 			Cache:      autocert.DirCache("./var"),
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist("shortener.ru", "www.shortener.ru"),
 		}
 
-		app.Server.TLSConfig = autoCertManager.TLSConfig()
-		return app.Server.ListenAndServeTLS("", "")
+		app.httpServer.TLSConfig = autoCertManager.TLSConfig()
+		return app.httpServer.ListenAndServeTLS("", "")
 	}
 
-	return app.Server.ListenAndServe()
+	return app.httpServer.ListenAndServe()
+}
+
+// RunGRPCServer run GRPC server.
+func (app *Application) RunGRPCServer() error {
+	fmt.Printf("GRPC Server started: %s\n", app.config.Server.GRPCAddr)
+
+	listen, err := net.Listen("tcp", app.config.Server.GRPCAddr)
+	if err != nil {
+		return err
+	}
+
+	app.grpServer = google_grpc.NewServer(
+		google_grpc.UnaryInterceptor(
+			interceptor.UnaryServer([]byte(app.config.App.Secret)),
+		),
+	)
+
+	pb.RegisterShortenerServer(
+		app.grpServer,
+		grpc.NewShortenerServer(app.config, app.getShortURLService()),
+	)
+
+	return app.grpServer.Serve(listen)
 }
 
 // Initialization configs.
 func (app *Application) initConfig() {
-	app.Config = config.New()
-	app.Config.Init()
-}
-
-func (app *Application) initRouter() {
-	app.router = chi.NewRouter()
+	app.config = config.New()
+	app.config.Init()
 }
 
 func (app *Application) initRepositoryStore() {
-	switch app.Config.Storage.Type {
+	switch app.config.Storage.Type {
 	case config.StorageTypeDatabase:
 		_pgxpool, err := app.getDBConnection()
 		if err != nil {
 			panic(err)
 		}
-		app.Store = sqlstore.NewStore(_pgxpool)
+		app.store = sqlstore.NewStore(_pgxpool)
 	case config.StorageTypeFile:
-		store, err := filestore.NewStore(app.Config.Storage.Path)
+		store, err := filestore.NewStore(app.config.Storage.Path)
 		if err != nil {
 			panic(err)
 		}
-		app.Store = store
+		app.store = store
 	default:
-		app.Store = memstore.NewStore()
+		app.store = memstore.NewStore()
 	}
 }
 
 // Initialization routes.
-func (app *Application) initRoutes() {
+func (app *Application) initHTTPRoutes() {
 	shortURL := app.getShortURLHandlerGroup()
 	database := app.getDatabaseHandlerGroup()
 
-	app.router.Use(middleware.Authenticate([]byte(app.Config.App.Secret)))
+	app.router.Use(middleware.Authenticate([]byte(app.config.App.Secret)))
 	app.router.Use(middleware.GzipCompress(1400))
 	app.router.Use(middleware.GzipDecompress())
 
@@ -130,6 +167,13 @@ func (app *Application) initRoutes() {
 	app.router.Post("/", shortURL.PostText)
 
 	app.router.Route("/api", func(r chi.Router) {
+		r.Route("/internal/stats", func(r chi.Router) {
+			if app.config.Server.TrustedSubnet != "" {
+				r.Use(middleware.TrustedSubnet(app.config.Server.TrustedSubnet))
+			}
+			r.Get("/", shortURL.GetStats)
+		})
+
 		r.Post("/shorten", shortURL.PostJSON)
 		r.Post("/shorten/batch", shortURL.PostBatchJSON)
 		r.Get("/user/urls", shortURL.GetUserURLHistory)
@@ -145,11 +189,15 @@ func (app *Application) getURLHashService() (h hasher.Hash) {
 	return
 }
 
+func (app *Application) getShortURLService() *service.URL {
+	URLRepository := app.store.URL()
+	hashService := app.getURLHashService()
+	return service.NewURL(URLRepository, hashService)
+}
+
 // Handler group for url shortener.
 func (app *Application) getShortURLHandlerGroup() *handler.ShortURL {
-	URLRepository := app.Store.URL()
-	hashService := app.getURLHashService()
-	return handler.NewShortURL(app.Config, service.NewURL(URLRepository, hashService))
+	return handler.NewShortURL(app.config, app.getShortURLService())
 }
 
 // Handler group for database.
@@ -167,7 +215,7 @@ func (app *Application) getDBConnection() (*pgxpool.Pool, error) {
 		return app.pgxpool, nil
 	}
 
-	dsn := app.Config.Storage.DSN
+	dsn := app.config.Storage.DSN
 
 	var err error
 	app.pgxpool, err = pgxpool.New(context.Background(), dsn)

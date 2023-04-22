@@ -39,15 +39,27 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	if ttl := app.Config.ShortURL.TTL; ttl > 0 {
+	if ttl := app.GetConfig().ShortURL.TTL; ttl > 0 {
 		wg.Add(1)
-		go cleaner.New(app.Store).CleanOlderShortURL(ctx, wg, ttl)
+		go func() {
+			defer wg.Done()
+			cleaner.New(app.GetStore()).CleanOlderShortURL(ctx, ttl)
+		}()
 	}
 
 	go func() {
-		if err := app.RunServer(); err != nil && err != http.ErrServerClosed {
+		if err := app.RunHTTPServer(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(
-				fmt.Sprintf("Failed to start server at %s", app.Config.Server.Addr),
+				fmt.Sprintf("Failed to start http server at %s", app.GetConfig().Server.Addr),
+				err,
+			)
+		}
+	}()
+
+	go func() {
+		if err := app.RunGRPCServer(); err != nil {
+			log.Fatal(
+				fmt.Sprintf("Failed to start grpc server at %s", app.GetConfig().Server.Addr),
 				err,
 			)
 		}
@@ -56,8 +68,6 @@ func main() {
 	<-ctx.Done()
 
 	wg.Wait()
-
-	fmt.Println("Shutting down server..")
 
 	if err := app.Shutdown(); err != nil {
 		log.Fatal(err)

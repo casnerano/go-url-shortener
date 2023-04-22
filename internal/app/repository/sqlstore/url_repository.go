@@ -185,3 +185,35 @@ func (rep *URLRepository) DeleteOlderRows(ctx context.Context, d time.Duration) 
 	)
 	return err
 }
+
+// Get total Short URL count
+func (rep *URLRepository) GetTotalURLCount(ctx context.Context) (int, error) {
+	count := 0
+	err := rep.store.pgxpool.QueryRow(
+		ctx,
+		"SELECT count(id) FROM short_url",
+	).Scan(
+		&count,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+// Get total User count
+func (rep *URLRepository) GetTotalUserCount(ctx context.Context) (int, error) {
+	count := 0
+	err := rep.store.pgxpool.QueryRow(
+		ctx,
+		"SELECT DISTINCT count(user_uuid) FROM short_url",
+	).Scan(
+		&count,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

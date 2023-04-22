@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 )
 
 func ExampleShortURL_PostText() {

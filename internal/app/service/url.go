@@ -82,3 +82,13 @@ func (urlService *URL) FindByUserUUID(uuid string) ([]*model.ShortURL, error) {
 func (urlService *URL) DeleteBatch(codes []string, uuid string) error {
 	return urlService.rep.DeleteBatchByCodes(context.TODO(), codes, uuid)
 }
+
+// Get total Short URL count
+func (urlService *URL) GetTotalURLCount() (int, error) {
+	return urlService.rep.GetTotalURLCount(context.TODO())
+}
+
+// Get total User count
+func (urlService *URL) GetTotalUserCount() (int, error) {
+	return urlService.rep.GetTotalUserCount(context.TODO())
+}

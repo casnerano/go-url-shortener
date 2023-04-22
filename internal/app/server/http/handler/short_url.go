@@ -10,9 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/casnerano/go-url-shortener/internal/app/config"
-	"github.com/casnerano/go-url-shortener/internal/app/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/model"
 	"github.com/casnerano/go-url-shortener/internal/app/repository"
+	"github.com/casnerano/go-url-shortener/internal/app/server/http/middleware"
 	"github.com/casnerano/go-url-shortener/internal/app/service"
 )
 
@@ -267,6 +267,33 @@ func (s *ShortURL) DeleteBatchJSON(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+// GetStats the handler get users and urls count, used json format.
+func (s *ShortURL) GetStats(w http.ResponseWriter, r *http.Request) {
+	urlsCount, err := s.urlService.GetTotalURLCount()
+	if err != nil {
+		http.Error(w, errServerInternal.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	usersCount, err := s.urlService.GetTotalUserCount()
+	if err != nil {
+		http.Error(w, errServerInternal.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+
+	rb, _ := json.Marshal(struct {
+		Urls int `json:"urls"`
+		User int `json:"users"`
+	}{
+		urlsCount,
+		usersCount,
+	})
+
+	fmt.Fprint(w, string(rb))
 }
 
 func (s *ShortURL) buildAbsoluteShortURL(shortCode string) string {

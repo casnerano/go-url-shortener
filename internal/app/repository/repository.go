@@ -26,4 +26,10 @@ type URLRepository interface {
 	DeleteBatchByCodes(ctx context.Context, codes []string, uuid string) error
 	// Delete older entities for duration.
 	DeleteOlderRows(ctx context.Context, age time.Duration) error
+
+	// Get total Short URL count
+	GetTotalURLCount(ctx context.Context) (int, error)
+
+	// Get total User count
+	GetTotalUserCount(ctx context.Context) (int, error)
 }
